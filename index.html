@@ -29,6 +29,7 @@
 -->
 <style>
 
+
 /* ============================================================
    テーマ変数
    ============================================================ */
@@ -308,34 +309,7 @@ main{
 .db-info .db-time{font-size:.64rem;color:var(--muted);margin-left:4px}
 .db-btns{display:flex;gap:5px;flex-wrap:wrap}
 
-/* ============================================================
-   薬局切替バー
-   ============================================================ */
-#pharmacyBar{
-  display:none;
-  background:var(--card);border:1px solid var(--border);
-  border-radius:var(--radius-sm);padding:11px 13px;
-  margin-bottom:10px;
-}
-#pharmacyBar.show{display:block}
-.pharm-label{font-size:.66rem;color:var(--muted);margin-bottom:8px;font-weight:700;letter-spacing:.05em}
-.pharm-list{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:9px}
-.pharm-chip{
-  font-size:.74rem;padding:5px 13px;border-radius:20px;
-  border:1.5px solid var(--border);background:var(--tag-bg);color:var(--text2);
-  cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:5px;
-}
-.pharm-chip:hover{border-color:var(--accent);color:var(--accent)}
-.pharm-chip.active{background:var(--accent-g);border-color:transparent;color:#fff;font-weight:700}
-.pharm-chip-del{font-size:.6rem;color:rgba(255,255,255,.6);background:none;border:none;cursor:pointer;padding:0;line-height:1;margin-left:2px}
-.pharm-chip-del:hover{color:#fff}
-.pharm-add-row{display:flex;gap:6px;align-items:center}
-.pharm-input{
-  flex:1;background:var(--input-bg);border:1.5px solid var(--border);
-  border-radius:7px;padding:8px 11px;font-size:.8rem;color:var(--text);
-  outline:none;transition:border-color .15s;-webkit-appearance:none;
-}
-.pharm-input:focus{border-color:var(--accent)}
+
 
 /* ============================================================
    CSVバナー（データなし時）— 中央寄せ・視認性重視
@@ -811,7 +785,6 @@ footer{
 [data-theme="light"] #csvBanner{background:#fff;border-color:#b0bcd8;box-shadow:0 2px 12px rgba(0,0,0,.10);}
 [data-theme="light"] .banner-title{color:#0f172a}
 [data-theme="light"] #dataBar{background:#fff;border-color:#b0bcd8;box-shadow:0 2px 8px rgba(0,0,0,.08);}
-[data-theme="light"] #pharmacyBar{background:#fff;border-color:#b0bcd8;}
 [data-theme="light"] #historyBar{background:#fff;border-color:#b0bcd8;}
 [data-theme="light"] .status-bar{background:rgba(255,255,255,.65);border-radius:10px;padding:4px 10px;border:1px solid rgba(176,188,216,.6);margin-bottom:8px;}
 [data-theme="light"] .finput,[data-theme="light"] .fselect,[data-theme="light"] .ftextarea{color:#0f172a}
@@ -819,6 +792,148 @@ footer{
 [data-theme="light"] .stag.cold{color:#0369a1;border-color:#bae6fd;background:#e0f5ff}
 [data-theme="light"] .stag.dark{color:#7c3aed;border-color:#ddd6fe;background:#f5f3ff}
 [data-theme="light"] .stag.narco{color:#b91c1c;border-color:#fecaca;background:#fef2f2}
+
+
+/* ============================================================
+   在庫バッジ（カード上）
+   ============================================================ */
+.stock-badge{
+  display:inline-flex;align-items:center;gap:3px;
+  font-size:.68rem;font-weight:700;
+  padding:2px 8px;border-radius:20px;
+  background:var(--tag-bg);color:var(--text2);
+  border:1px solid var(--border);
+  white-space:nowrap;
+}
+.stock-badge.reorder{
+  background:rgba(251,146,60,.15);
+  color:var(--warn);border-color:rgba(251,146,60,.35);
+}
+.stock-badge.stockout{
+  background:rgba(248,113,113,.15);
+  color:var(--danger);border-color:rgba(248,113,113,.35);
+}
+[data-theme="light"] .stock-badge.reorder{background:rgba(194,65,12,.08);color:#9a3412;border-color:rgba(194,65,12,.25)}
+[data-theme="light"] .stock-badge.stockout{background:rgba(185,28,28,.08);color:#9a1515;border-color:rgba(185,28,28,.25)}
+
+/* ============================================================
+   選択モード
+   ============================================================ */
+.select-bar{
+  display:none;
+  align-items:center;justify-content:space-between;
+  background:var(--card);border:1px solid var(--border);
+  border-radius:var(--radius-sm);padding:8px 13px;
+  margin-bottom:8px;gap:8px;
+}
+.select-bar.show{display:flex}
+.select-bar-left{font-size:.78rem;font-weight:700;color:var(--text)}
+.select-bar-right{display:flex;gap:6px}
+
+.select-toggle-btn{
+  font-size:.71rem;padding:4px 10px;min-height:28px;
+  border-radius:6px;border:1px solid var(--border);
+  background:var(--tag-bg);color:var(--text2);
+  transition:all .15s;display:inline-flex;align-items:center;gap:3px;
+}
+.select-toggle-btn:hover{border-color:var(--accent);color:var(--accent)}
+.select-toggle-btn.active{
+  background:rgba(56,189,248,.12);
+  border-color:var(--accent);color:var(--accent);font-weight:700;
+}
+[data-theme="light"] .select-toggle-btn.active{background:rgba(3,105,161,.08);border-color:#075985;color:#075985}
+
+/* 選択中カード */
+.drug-card.selectable{ cursor:pointer; }
+.drug-card.selectable .card-select{
+  position:absolute;top:10px;left:12px;
+  width:18px;height:18px;border-radius:5px;
+  border:2px solid var(--border);background:var(--card2);
+  display:flex;align-items:center;justify-content:center;
+  transition:all .15s;z-index:3;pointer-events:none;
+}
+.drug-card.selected .card-select{
+  background:var(--accent);border-color:var(--accent);
+  color:#fff;font-size:.7rem;line-height:1;
+}
+.drug-card.selected{
+  border-color:var(--accent);
+  background:rgba(56,189,248,.05);
+}
+[data-theme="light"] .drug-card.selected{background:rgba(3,105,161,.04)}
+/* 選択モード中はcard-topを右にずらして選択ボックス分のスペース確保 */
+.selectable-mode .drug-card .card-top{padding-left:26px}
+
+/* ============================================================
+   グループ表示ヘッダー
+   ============================================================ */
+.group-header{
+  font-size:.72rem;font-weight:700;letter-spacing:.08em;
+  color:var(--muted);
+  padding:6px 4px 4px;
+  border-bottom:1px solid var(--border);
+  margin-bottom:4px;margin-top:6px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.group-header:first-child{margin-top:0}
+.group-count{
+  font-size:.68rem;font-weight:400;
+  background:var(--tag-bg);border:1px solid var(--border);
+  border-radius:20px;padding:1px 8px;color:var(--muted);
+}
+.group-mode-btn{
+  font-size:.68rem;padding:3px 9px;min-height:26px;
+  border-radius:6px;border:1px solid var(--border);
+  background:var(--tag-bg);color:var(--text2);
+  transition:all .15s;display:inline-flex;align-items:center;gap:3px;
+}
+.group-mode-btn:hover{border-color:var(--accent);color:var(--accent)}
+.group-mode-btn.active{
+  background:rgba(56,189,248,.12);border-color:var(--accent);
+  color:var(--accent);font-weight:700;
+}
+[data-theme="light"] .group-mode-btn.active{background:rgba(3,105,161,.08);border-color:#075985;color:#075985}
+
+/* ============================================================
+   CSVインポートダイアログ
+   ============================================================ */
+#csvImportDialog{
+  display:none;position:fixed;inset:0;z-index:400;
+  background:var(--overlay);
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  align-items:center;justify-content:center;
+}
+#csvImportDialog.show{display:flex}
+.import-sheet{
+  background:var(--surface);border-radius:20px;
+  padding:24px 22px;width:calc(100% - 32px);max-width:380px;
+  box-shadow:var(--shadow);
+}
+.import-title{font-size:1rem;font-weight:800;margin-bottom:6px;color:var(--text)}
+.import-sub{font-size:.8rem;color:var(--muted);margin-bottom:18px;line-height:1.6}
+.import-filename{
+  font-size:.8rem;font-weight:700;color:var(--accent);
+  background:var(--tag-bg);padding:6px 10px;border-radius:7px;
+  margin-bottom:18px;word-break:break-all;
+}
+.import-options{display:flex;flex-direction:column;gap:8px;margin-bottom:18px}
+.import-option{
+  display:flex;align-items:flex-start;gap:10px;
+  padding:12px 14px;border-radius:var(--radius-sm);
+  border:1.5px solid var(--border);background:var(--card2);
+  cursor:pointer;transition:all .15s;
+}
+.import-option:hover{border-color:var(--accent)}
+.import-option.selected{
+  border-color:var(--accent);background:rgba(56,189,248,.06);
+}
+[data-theme="light"] .import-option.selected{background:rgba(3,105,161,.05)}
+.import-option-icon{
+  font-size:1.2rem;flex-shrink:0;line-height:1;margin-top:1px;
+}
+.import-option-title{font-size:.85rem;font-weight:700;margin-bottom:2px}
+.import-option-desc{font-size:.73rem;color:var(--muted);line-height:1.5}
+.import-actions{display:flex;gap:8px;justify-content:flex-end}
 
 /* ============================================================
    印刷
@@ -833,7 +948,7 @@ footer{
   .shelf-badge{background:#000!important;color:#fff!important;font-size:.7rem;padding:2px 6px}
   .chip{border:1px solid #ccc!important;background:#f5f5f5!important;color:#333!important}
   .warn-row{color:#c05000!important;background:#fff8f0!important}
-  #statusBar,#dataBar,#historyBar,#errorBox,#csvBanner,#pharmacyBar{display:none!important}
+  #statusBar,#dataBar,#historyBar,#errorBox,#csvBanner{display:none!important}
 }
 
 /* ============================================================
@@ -858,6 +973,7 @@ footer{
   .fgrid{grid-template-columns:1fr}
 }
 
+
 </style>
 </head>
 <body>
@@ -877,12 +993,10 @@ footer{
         spellcheck="false" inputmode="search" aria-label="薬品を検索">
       <div class="search-actions">
         <button class="search-icon-btn clear-btn" id="clearBtn" aria-label="クリア">✕</button>
-        <button class="search-icon-btn" id="voiceBtn" aria-label="音声入力" title="音声入力">🎤</button>
       </div>
     </div>
 
     <div class="header-btns">
-      <button class="hbtn" id="pharmBtn" title="薬局切替" aria-label="薬局切替">🏥</button>
       <button class="hbtn" id="qrBtn" title="QRスキャン" aria-label="QRスキャン">📷</button>
       <button class="hbtn" id="themeBtn" title="ライト/ダーク切替" aria-label="テーマ切替">🌙</button>
       <button class="hbtn" id="csvIconBtn" title="CSVを読み込む" aria-label="CSV読込">📄</button>
@@ -947,6 +1061,7 @@ footer{
     </button>
     <!-- 要注意：シールド感嘆符 -->
     <button class="ftab" data-filter="fav" role="tab">⭐ お気に入り</button>
+    <button class="ftab" data-filter="reorder" role="tab">🔴 要発注</button>
     <button class="ftab" data-filter="warning" role="tab">
       <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
         <path d="M8 1.5L2 4v4.5c0 3 2.5 5.5 6 6 3.5-.5 6-3 6-6V4L8 1.5z"/>
@@ -965,7 +1080,11 @@ footer{
       <span id="statusText">読み込み中...</span>
       <span class="count-badge" id="countBadge"></span>
     </div>
-    <button class="sort-btn" id="sortBtn" title="並び替え">⇅ <span id="sortLabel">標準</span></button>
+    <div style="display:flex;gap:5px;flex-shrink:0">
+      <button class="group-mode-btn" id="groupBtn" title="棚ごとにグループ表示">▤ <span id="groupLabel">一覧</span></button>
+      <button class="select-toggle-btn" id="selectBtn" title="選択モード">☑ 選択</button>
+      <button class="sort-btn" id="sortBtn" title="並び替え">⇅ <span id="sortLabel">標準</span></button>
+    </div>
   </div>
 
   <!-- 検索履歴 -->
@@ -996,24 +1115,25 @@ footer{
     </div>
   </div>
 
-  <!-- 薬局切替バー -->
-  <div id="pharmacyBar">
-    <div class="pharm-label">🏥 薬局を切り替え</div>
-    <div class="pharm-list" id="pharmList"></div>
-    <div class="pharm-add-row">
-      <input class="pharm-input" id="pharmNameInput" type="text" placeholder="薬局名を入力（例：本店・分店）" maxlength="20">
-      <button class="xs" onclick="addPharmacy()">＋ 追加</button>
-    </div>
-  </div>
-
   <!-- データバー -->
   <div id="dataBar">
     <div class="db-info" id="dbInfo">読込済み</div>
     <div class="db-btns">
       <button class="xs" onclick="triggerFile()">📄 CSV更新</button>
       <button class="xs grn" onclick="exportCSV()">⬇ 書出</button>
+      <button class="xs" onclick="exportReorderCSV()" title="要発注リストをCSV出力">🔴 要発注CSV</button>
       <button class="xs" onclick="window.print()">🖨 印刷</button>
       <button class="xs red" onclick="confirmClear()">✕ クリア</button>
+    </div>
+  </div>
+
+  <!-- 選択モードバー -->
+  <div class="select-bar" id="selectBar">
+    <div class="select-bar-left"><span id="selectCount">0件選択中</span></div>
+    <div class="select-bar-right">
+      <button class="xs" onclick="selectAll()">全選択</button>
+      <button class="xs red" onclick="bulkDelete()">🗑️ 削除</button>
+      <button class="xs" onclick="exitSelectMode()">キャンセル</button>
     </div>
   </div>
 
@@ -1153,23 +1273,24 @@ footer{
         <input class="finput" id="ef_supplier" type="text" placeholder="例：スズケン">
       </div>
 
-      <div class="fsec">⚠️ 注意・検索</div>
+      <div class="fsec">⚠️ 類似薬注意</div>
 
       <div class="fgroup">
         <label class="flabel" for="ef_warning">類似薬注意<span class="hint">（入力するとカードに⚠️表示）</span></label>
         <input class="finput" id="ef_warning" type="text" placeholder="例：アルマールとアマリールを絶対に間違えないこと">
       </div>
-      <div class="fgroup">
-        <label class="flabel" for="ef_alias">名称ゆれ<span class="hint">（別表記・通称）</span></label>
-        <input class="finput" id="ef_alias" type="text" placeholder="例：カロナール / アセトアミノフェン">
-      </div>
-      <div class="fgroup">
-        <label class="flabel" for="ef_search">検索用別名<span class="hint">（先発品名・略称）</span></label>
-        <input class="finput" id="ef_search" type="text" placeholder="例：ノルバスク アムロジン">
-      </div>
-      <div class="fgroup">
-        <label class="flabel" for="ef_note">備考</label>
-        <textarea class="ftextarea" id="ef_note" placeholder="例：食後服用。腎機能に応じて減量。"></textarea>
+
+      <div class="fsec">📦 在庫管理</div>
+
+      <div class="fgrid">
+        <div class="fgroup">
+          <label class="flabel" for="ef_stock">在庫数<span class="hint">（現在の数量）</span></label>
+          <input class="finput" id="ef_stock" type="number" min="0" placeholder="0">
+        </div>
+        <div class="fgroup">
+          <label class="flabel" for="ef_reorder">発注点<span class="hint">（この数以下で要発注）</span></label>
+          <input class="finput" id="ef_reorder" type="number" min="0" placeholder="0">
+        </div>
       </div>
 
       <!-- 削除ゾーン（編集時のみ） -->
@@ -1208,6 +1329,35 @@ footer{
   <img id="photoFullImg" src="" alt="棚写真">
 </div>
 
+<!-- CSVインポートダイアログ -->
+<div id="csvImportDialog">
+  <div class="import-sheet">
+    <div class="import-title">📄 CSVを読み込む</div>
+    <div class="import-sub">既存のデータをどうしますか？</div>
+    <div class="import-filename" id="importFileName"></div>
+    <div class="import-options">
+      <div class="import-option selected" id="importOptOverwrite" onclick="selectImportOpt('overwrite')">
+        <div class="import-option-icon">🔄</div>
+        <div>
+          <div class="import-option-title">上書き（完全に置き換える）</div>
+          <div class="import-option-desc">現在のデータを削除し、CSVの内容で置き換えます</div>
+        </div>
+      </div>
+      <div class="import-option" id="importOptMerge" onclick="selectImportOpt('merge')">
+        <div class="import-option-icon">➕</div>
+        <div>
+          <div class="import-option-title">追加（既存データに追記する）</div>
+          <div class="import-option-desc">既存データを残したまま、CSVの内容を末尾に追加します</div>
+        </div>
+      </div>
+    </div>
+    <div class="import-actions">
+      <button class="btn btn-ghost" style="min-height:38px;padding:8px 16px;font-size:.82rem" onclick="cancelImport()">キャンセル</button>
+      <button class="btn btn-primary" style="min-height:38px;padding:8px 16px;font-size:.82rem" onclick="confirmImport()">読み込む</button>
+    </div>
+  </div>
+</div>
+
 <!-- ファイル入力 -->
 <input type="file" id="csvFileInput" accept=".csv,text/csv" style="display:none" aria-hidden="true">
 
@@ -1224,21 +1374,23 @@ var LS_META    = 'yaku_meta_v4';
 var LS_THEME   = 'yaku_theme';
 var LS_HISTORY = 'yaku_history';
 var LS_FAV     = 'yaku_fav';
-var LS_PHARMACY= 'yaku_pharmacy';
 
 var FILTER_KW = {
-  all: null,
+  all:null,
   tablet:   ['錠','OD錠','カプセル','cap'],
   liquid:   ['液','シロップ','点眼','点鼻','内用液'],
   powder:   ['散','顆粒','DS','ドライシロップ'],
   external: ['軟膏','クリーム','テープ','パップ','ゲル','スプレー','貼付'],
   injection:['注射','注','点滴','静注','筋注'],
   warning:  '__warn__',
-  fav:      '__fav__'
+  fav:      '__fav__',
+  reorder:  '__reorder__'
 };
+
 var FIELDS = ['薬品名','一般名','規格','剤形','メーカー','棚番号','棚の詳細位置',
-              '先発/後発','採用区分','備考','類似薬注意','名称ゆれ','検索用別名',
+              '先発/後発','採用区分','類似薬注意','在庫数','発注点','更新日時',
               '保存区分','発注先','棚写真URL'];
+
 var FIELD_MAP = [
   {id:'ef_name',       key:'薬品名'},
   {id:'ef_generic',    key:'一般名'},
@@ -1252,320 +1404,280 @@ var FIELD_MAP = [
   {id:'ef_adoption',   key:'採用区分'},
   {id:'ef_supplier',   key:'発注先'},
   {id:'ef_warning',    key:'類似薬注意'},
-  {id:'ef_alias',      key:'名称ゆれ'},
-  {id:'ef_search',     key:'検索用別名'},
-  {id:'ef_note',       key:'備考'},
+  {id:'ef_stock',      key:'在庫数'},
+  {id:'ef_reorder',    key:'発注点'},
 ];
 
+/* ---- 在庫ユーティリティ ---- */
+function getStock(d){
+  var v=parseInt(d['在庫数'],10);
+  return isNaN(v)?null:v;
+}
+function getReorder(d){
+  var v=parseInt(d['発注点'],10);
+  return isNaN(v)||v<=0?null:v;
+}
+function isStockOut(d){
+  var s=getStock(d);
+  return s!==null&&s===0;
+}
+function needsReorder(d){
+  var s=getStock(d), r=getReorder(d);
+  return s!==null&&r!==null&&s<=r&&s>0;
+}
+
 /* ---- 状態 ---- */
-var allDrugs      = [];
-var filteredDrugs = [];
-var activeFilter  = 'all';
-var searchQuery   = '';
-var sortMode      = 'default';
-var editingIdx    = -1;
-var currentDrug   = null;
-var searchHistory = [];
-var favorites     = {};
-var pharmacies    = [];
-var activePharmId = null;
-var searchTimer   = null;
-var toastTimer    = null;
-var qrStream      = null;
-var qrTimer       = null;
-var recognition   = null;
+var allDrugs       = [];
+var filteredDrugs  = [];
+var activeFilter   = 'all';
+var searchQuery    = '';
+var sortMode       = 'default';
+var groupMode      = false;
+var selectMode     = false;
+var selectedSet    = {};
+var editingIdx     = -1;
+var currentDrug    = null;
+var searchHistory  = [];
+var favorites      = {};
+var searchTimer    = null;
+var toastTimer     = null;
+var qrStream       = null;
+var qrTimer        = null;
+var pendingFile    = null;
+var importMode     = 'overwrite';
 
-/* ---- DOM取得ユーティリティ ---- */
+/* ---- DOM ---- */
 function $(id){ return document.getElementById(id); }
-function on(id, ev, fn){
-  var el = $(id);
-  if(el) el.addEventListener(ev, fn);
+function on(id,ev,fn){ var el=$(id); if(el) el.addEventListener(ev,fn); }
+
+/* ---- テーマ ---- */
+function applyTheme(t){
+  document.documentElement.setAttribute('data-theme',t);
+  var b=$('themeBtn'); if(b) b.textContent=t==='dark'?'🌙':'☀️';
+  try{ localStorage.setItem(LS_THEME,t); }catch(e){}
 }
 
-/* ==============================================================
-   テーマ
-   ============================================================== */
-function applyTheme(t) {
-  document.documentElement.setAttribute('data-theme', t);
-  var btn = $('themeBtn');
-  if(btn) btn.textContent = t === 'dark' ? '🌙' : '☀️';
-  try { localStorage.setItem(LS_THEME, t); } catch(e){}
-}
-
-/* ==============================================================
-   トースト
-   ============================================================== */
-function showToast(msg, icon) {
-  var el = $('toast');
-  if(!el) return;
-  el.innerHTML = (icon || '✅') + ' ' + escH(msg);
+/* ---- トースト ---- */
+function showToast(msg,icon){
+  var el=$('toast'); if(!el) return;
+  el.innerHTML=(icon||'✅')+' '+escH(msg);
   el.classList.add('show');
   if(toastTimer) clearTimeout(toastTimer);
-  toastTimer = setTimeout(function(){ el.classList.remove('show'); }, 2500);
+  toastTimer=setTimeout(function(){ el.classList.remove('show'); },2500);
 }
 
-/* ==============================================================
-   エラーボックス
-   ============================================================== */
-function showError(title, body) {
-  var t = $('errorTitle'), b = $('errorBody'), box = $('errorBox');
+/* ---- エラーボックス ---- */
+function showError(title,body){
+  var t=$('errorTitle'),b=$('errorBody'),box=$('errorBox');
   if(!box) return;
-  if(t) t.textContent = title;
-  if(b) b.innerHTML = escH(body).replace(/\n/g,'<br>');
-  box.style.display = 'block';
+  if(t) t.textContent=title;
+  if(b) b.innerHTML=escH(body).replace(/\n/g,'<br>');
+  box.style.display='block';
 }
-function hideError() {
-  var box = $('errorBox');
-  if(box) box.style.display = 'none';
+function hideError(){ var box=$('errorBox'); if(box) box.style.display='none'; }
+
+/* ---- ステータス ---- */
+function setStatus(state,msg){
+  var dot=$('statusDot'),text=$('statusText');
+  if(dot) dot.className='status-dot'+(state==='warn'?' warn':state==='err'?' err':'');
+  if(text&&msg!==undefined) text.textContent=msg;
 }
 
-/* ==============================================================
-   ステータスバー
-   ============================================================== */
-function setStatus(state, msg) {
-  var dot  = $('statusDot');
-  var text = $('statusText');
-  if(dot)  dot.className = 'status-dot' + (state==='warn'?' warn':state==='err'?' err':'');
-  if(text && msg !== undefined) text.textContent = msg;
-}
-
-/* ==============================================================
-   HTML ユーティリティ
-   ============================================================== */
-function escH(s) {
-  return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-function hlText(text, q) {
-  if(!q || !text) return escH(text||'');
-  var nq=norm(q), out='', i=0, t=text;
-  while(i < t.length) {
-    if(nq.length > 0 && norm(t.slice(i)).startsWith(nq)) {
-      out += '<em>' + escH(t.slice(i, i+nq.length)) + '</em>';
-      i += nq.length;
-    } else {
-      out += escH(t[i]);
-      i++;
-    }
+/* ---- HTML ---- */
+function escH(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function hlText(text,q){
+  if(!q||!text) return escH(text||'');
+  var nq=norm(q),out='',i=0,t=text;
+  while(i<t.length){
+    if(nq.length>0&&norm(t.slice(i)).startsWith(nq)){
+      out+='<em>'+escH(t.slice(i,i+nq.length))+'</em>'; i+=nq.length;
+    } else { out+=escH(t[i]); i++; }
   }
   return out;
 }
-
-/* ==============================================================
-   検索正規化
-   ============================================================== */
-function norm(s) {
+function norm(s){
   if(!s) return '';
   return s.toLowerCase()
-    .replace(/[Ａ-Ｚａ-ｚ０-９]/g, function(c){ return String.fromCharCode(c.charCodeAt(0)-0xFEE0); })
-    .replace(/[\u30A1-\u30F6]/g,   function(c){ return String.fromCharCode(c.charCodeAt(0)-0x60); })
-    .replace(/[\s\u3000\u30FB\u00B7・　]/g, '');
+    .replace(/[Ａ-Ｚａ-ｚ０-９]/g,function(c){ return String.fromCharCode(c.charCodeAt(0)-0xFEE0); })
+    .replace(/[\u30A1-\u30F6]/g,function(c){ return String.fromCharCode(c.charCodeAt(0)-0x60); })
+    .replace(/[\s\u3000\u30FB\u00B7・　]/g,'');
 }
 
 /* ==============================================================
-   お気に入り
+   ⭐ お気に入り
    ============================================================== */
-function loadFav() {
-  try { favorites = JSON.parse(localStorage.getItem(LS_FAV)||'{}'); } catch(e){ favorites={}; }
-}
-function saveFav() {
-  try { localStorage.setItem(LS_FAV, JSON.stringify(favorites)); } catch(e){}
-}
-function toggleFav(name) {
+function loadFav(){ try{ favorites=JSON.parse(localStorage.getItem(LS_FAV)||'{}'); }catch(e){ favorites={}; } }
+function saveFav(){ try{ localStorage.setItem(LS_FAV,JSON.stringify(favorites)); }catch(e){} }
+function toggleFav(name){
   if(!name) return;
-  if(favorites[name]) { delete favorites[name]; showToast(name+' をお気に入りから削除','☆'); }
-  else                { favorites[name]=true;   showToast(name+' をお気に入り登録','⭐'); }
-  saveFav();
-  render();
-  updateModalFavBtn(name);
+  if(favorites[name]){ delete favorites[name]; showToast(name+' をお気に入りから削除','☆'); }
+  else { favorites[name]=true; showToast(name+' をお気に入り登録','⭐'); }
+  saveFav(); render(); updateModalFavBtn(name);
 }
-function toggleFavFromModal() {
-  if(currentDrug) toggleFav(currentDrug['薬品名']);
-}
-function updateModalFavBtn(name) {
-  var btn = $('modalFavBtn');
-  if(!btn) return;
-  var isFav = !!favorites[name];
-  btn.textContent = isFav ? '⭐' : '☆';
-  btn.style.color  = isFav ? '#f59e0b' : '';
+function toggleFavFromModal(){ if(currentDrug) toggleFav(currentDrug['薬品名']); }
+function updateModalFavBtn(name){
+  var btn=$('modalFavBtn'); if(!btn) return;
+  var isFav=!!favorites[name];
+  btn.textContent=isFav?'⭐':'☆';
+  btn.style.color=isFav?'#f59e0b':'';
 }
 
 /* ==============================================================
-   複数薬局
+   ☑ 選択モード
    ============================================================== */
-function loadPharmacies() {
-  try { pharmacies = JSON.parse(localStorage.getItem(LS_PHARMACY)||'[]'); } catch(e){ pharmacies=[]; }
-}
-function savePharmacies() {
-  try { localStorage.setItem(LS_PHARMACY, JSON.stringify(pharmacies)); } catch(e){}
-}
-function renderPharmList() {
-  var list = $('pharmList');
-  if(!list) return;
-  if(!pharmacies.length) {
-    list.innerHTML = '<span style="font-size:.72rem;color:var(--muted)">薬局を追加すると切り替えられます</span>';
-    return;
-  }
-  list.innerHTML = pharmacies.map(function(p){
-    var active = p.id === activePharmId;
-    return '<span class="pharm-chip'+(active?' active':'')+'" data-id="'+escH(p.id)+'">'
-      + escH(p.name)+' <small style="opacity:.6">('+p.drugs.length+'件)</small>'
-      + (!active ? '<button class="pharm-chip-del" data-id="'+escH(p.id)+'">✕</button>' : '')
-      + '</span>';
-  }).join('');
-  list.querySelectorAll('.pharm-chip').forEach(function(chip){
-    chip.addEventListener('click', function(e){
-      if(e.target.classList.contains('pharm-chip-del')) return;
-      switchPharmacy(this.dataset.id);
-    });
-  });
-  list.querySelectorAll('.pharm-chip-del').forEach(function(btn){
-    btn.addEventListener('click', function(e){
-      e.stopPropagation();
-      deletePharmacy(this.dataset.id);
-    });
-  });
-}
-function addPharmacy() {
-  var input = $('pharmNameInput');
-  if(!input) return;
-  var name = (input.value||'').trim();
-  if(!name){ input.focus(); return; }
-  if(pharmacies.find(function(p){ return p.name===name; })){
-    showToast('同じ名前の薬局が既にあります','⚠️'); return;
-  }
-  var id   = 'pharm_'+Date.now();
-  var meta = null;
-  try { var m=localStorage.getItem(LS_META); meta=m?JSON.parse(m):{}; } catch(e){ meta={}; }
-  pharmacies.push({ id:id, name:name, drugs:allDrugs.slice(), meta:meta });
-  activePharmId = id;
-  savePharmacies();
-  input.value = '';
-  renderPharmList();
-  showToast('「'+name+'」として保存しました');
-}
-function switchPharmacy(id) {
-  var p = pharmacies.find(function(x){ return x.id===id; });
-  if(!p) return;
-  var curIdx = pharmacies.findIndex(function(x){ return x.id===activePharmId; });
-  if(curIdx >= 0) {
-    var meta = null;
-    try { var m=localStorage.getItem(LS_META); meta=m?JSON.parse(m):{}; } catch(e){ meta={}; }
-    pharmacies[curIdx].drugs = allDrugs.slice();
-    pharmacies[curIdx].meta  = meta;
-  }
-  activePharmId = id;
-  allDrugs = p.drugs.slice();
-  savePharmacies();
-  renderPharmList();
-  searchQuery = '';
-  var si = $('searchInput'); if(si) si.value='';
-  var cb = $('clearBtn'); if(cb) cb.classList.remove('show');
-  activeFilter = 'all';
-  document.querySelectorAll('.ftab').forEach(function(t){
-    t.classList.toggle('active', t.dataset.filter==='all');
-  });
-  var di = $('dbInfo');
-  if(di) di.innerHTML = '<strong>'+escH(p.name)+'</strong>&nbsp;'+allDrugs.length+'件';
+function enterSelectMode(){
+  selectMode=true; selectedSet={};
+  var list=$('resultList'), btn=$('selectBtn');
+  if(list) list.classList.add('selectable-mode');
+  if(btn)  btn.classList.add('active');
   render();
-  showToast('「'+p.name+'」に切り替えました');
+  updateSelectBar();
 }
-function deletePharmacy(id) {
-  var p = pharmacies.find(function(x){ return x.id===id; });
-  if(!p || !window.confirm('「'+p.name+'」を削除しますか？')) return;
-  pharmacies = pharmacies.filter(function(x){ return x.id!==id; });
-  savePharmacies();
-  renderPharmList();
-  showToast('削除しました','🗑️');
+function exitSelectMode(){
+  selectMode=false; selectedSet={};
+  var list=$('resultList'), btn=$('selectBtn'), bar=$('selectBar');
+  if(list) list.classList.remove('selectable-mode');
+  if(btn)  btn.classList.remove('active');
+  if(bar)  bar.classList.remove('show');
+  render();
+}
+function toggleSelect(drugName){
+  if(selectedSet[drugName]) delete selectedSet[drugName];
+  else selectedSet[drugName]=true;
+  updateSelectBar();
+  // カードのvisualだけ更新（re-renderせず）
+  var list=$('resultList');
+  if(!list) return;
+  list.querySelectorAll('.drug-card').forEach(function(card){
+    var idx=parseInt(card.dataset.idx,10);
+    var d=filteredDrugs[idx];
+    if(!d) return;
+    var isSelected=!!selectedSet[d['薬品名']];
+    card.classList.toggle('selected',isSelected);
+    var chk=card.querySelector('.card-select');
+    if(chk) chk.textContent=isSelected?'✓':'';
+  });
+}
+function selectAll(){
+  filteredDrugs.forEach(function(d){ selectedSet[d['薬品名']]=true; });
+  render(); updateSelectBar();
+}
+function updateSelectBar(){
+  var bar=$('selectBar'), cnt=$('selectCount');
+  var n=Object.keys(selectedSet).length;
+  if(bar){ if(selectMode) bar.classList.add('show'); }
+  if(cnt) cnt.textContent=n+'件選択中';
+}
+function bulkDelete(){
+  var n=Object.keys(selectedSet).length;
+  if(!n){ showToast('薬品を選択してください','⚠️'); return; }
+  if(!window.confirm(n+'件の薬品を削除しますか？\nこの操作は元に戻せません。')) return;
+  allDrugs=allDrugs.filter(function(d){ return !selectedSet[d['薬品名']]; });
+  saveLS('手動データ');
+  exitSelectMode();
+  hideError();
+  refreshUI('手動データ');
+  showToast(n+'件を削除しました','🗑️');
+}
+
+/* ==============================================================
+   📦 在庫クイック操作
+   ============================================================== */
+function changeStock(drugName,delta){
+  var idx=allDrugs.findIndex(function(d){ return d['薬品名']===drugName; });
+  if(idx<0) return;
+  var cur=getStock(allDrugs[idx]);
+  if(cur===null) cur=0;
+  var next=Math.max(0, cur+delta);
+  allDrugs[idx]['在庫数']=String(next);
+  allDrugs[idx]['更新日時']=new Date().toISOString();
+  saveLS('手動データ');
+  render();
+  // 在庫状態に応じてトースト
+  if(next===0) showToast(drugName+' 在庫切れ','🔴');
+  else if(needsReorder(allDrugs[idx])) showToast(drugName+' 要発注（残'+next+'）','🟠');
+}
+
+/* ==============================================================
+   📊 グループ表示
+   ============================================================== */
+function toggleGroupMode(){
+  groupMode=!groupMode;
+  var btn=$('groupBtn'), label=$('groupLabel');
+  if(btn) btn.classList.toggle('active',groupMode);
+  if(label) label.textContent=groupMode?'棚別':'一覧';
+  render();
 }
 
 /* ==============================================================
    QRスキャン
    ============================================================== */
-function openQR() {
-  var modal = $('qrModal');
-  if(!modal) return;
+function openQR(){
+  var modal=$('qrModal'); if(!modal) return;
   modal.classList.add('show');
-  document.body.style.overflow = 'hidden';
-  var resultEl = $('qrResult');
-  var manualEl = $('qrManual');
-  var videoEl  = $('qrVideo');
-  var lineEl   = document.querySelector('.qr-scan-line');
-  if(resultEl) { resultEl.textContent='カメラを起動中...'; resultEl.className='qr-result'; }
-  if(manualEl) manualEl.style.display='none';
-  if(videoEl)  videoEl.style.display='';
-  if(lineEl)   lineEl.style.display='';
-  if('BarcodeDetector' in window) {
-    startBarcodeDetector();
-  } else if(navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-    if(resultEl){ resultEl.textContent='QRスキャン非対応。棚番号を直接入力してください。'; resultEl.className='qr-result notfound'; }
-    if(manualEl) manualEl.style.display='flex';
-    if(videoEl)  videoEl.style.display='none';
-    if(lineEl)   lineEl.style.display='none';
-  } else {
-    if(resultEl){ resultEl.textContent='棚番号を直接入力してください。'; resultEl.className='qr-result notfound'; }
-    if(manualEl) manualEl.style.display='flex';
-    if(videoEl)  videoEl.style.display='none';
-    if(lineEl)   lineEl.style.display='none';
+  document.body.style.overflow='hidden';
+  var re=$('qrResult'),ma=$('qrManual'),v=$('qrVideo'),l=document.querySelector('.qr-scan-line');
+  if(re){ re.textContent='カメラを起動中...'; re.className='qr-result'; }
+  if(ma) ma.style.display='none';
+  if(v)  v.style.display='';
+  if(l)  l.style.display='';
+  if('BarcodeDetector' in window) startBarcodeDetector();
+  else {
+    if(re){ re.textContent='QRスキャン非対応。棚番号を入力してください。'; re.className='qr-result notfound'; }
+    if(ma) ma.style.display='flex';
+    if(v)  v.style.display='none';
+    if(l)  l.style.display='none';
   }
 }
-function startBarcodeDetector() {
-  var video    = $('qrVideo');
-  var resultEl = $('qrResult');
-  var manualEl = $('qrManual');
-  var detector = new BarcodeDetector({formats:['qr_code']});
+function startBarcodeDetector(){
+  var video=$('qrVideo'),re=$('qrResult'),ma=$('qrManual');
+  var detector=new BarcodeDetector({formats:['qr_code']});
   navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}})
     .then(function(stream){
-      qrStream = stream;
+      qrStream=stream;
       if(video){ video.srcObject=stream; video.play(); }
-      if(resultEl) resultEl.textContent='QRコードをカメラに向けてください';
-      qrTimer = setInterval(function(){
-        if(!video || video.readyState < 2) return;
+      if(re) re.textContent='QRコードをカメラに向けてください';
+      qrTimer=setInterval(function(){
+        if(!video||video.readyState<2) return;
         detector.detect(video).then(function(codes){
           if(!codes.length) return;
-          var text = (codes[0].rawValue||'').trim();
-          if(!text) return;
+          var text=(codes[0].rawValue||'').trim(); if(!text) return;
           clearInterval(qrTimer); qrTimer=null;
-          if(resultEl){ resultEl.textContent='読み取り成功：「'+text+'」'; resultEl.className='qr-result found'; }
+          if(re){ re.textContent='読み取り成功：「'+text+'」'; re.className='qr-result found'; }
           setTimeout(function(){
             closeQR();
             var si=$('searchInput'); if(si) si.value=text;
             searchQuery=text;
             var cb=$('clearBtn'); if(cb) cb.classList.add('show');
             activeFilter='all';
-            document.querySelectorAll('.ftab').forEach(function(t){
-              t.classList.toggle('active',t.dataset.filter==='all');
-            });
+            document.querySelectorAll('.ftab').forEach(function(t){ t.classList.toggle('active',t.dataset.filter==='all'); });
             render();
             showToast('「'+text+'」で検索しました','📷');
-          }, 500);
+          },500);
         }).catch(function(){});
-      }, 300);
+      },300);
     })
     .catch(function(){
-      if(resultEl){ resultEl.textContent='カメラにアクセスできません。棚番号を入力してください。'; resultEl.className='qr-result notfound'; }
-      if(manualEl) manualEl.style.display='flex';
+      if(re){ re.textContent='カメラにアクセスできません。棚番号を入力してください。'; re.className='qr-result notfound'; }
+      if(ma) ma.style.display='flex';
     });
 }
-function closeQR() {
+function closeQR(){
   clearInterval(qrTimer); qrTimer=null;
   if(qrStream){ qrStream.getTracks().forEach(function(t){ t.stop(); }); qrStream=null; }
-  var modal=$('qrModal'), video=$('qrVideo');
+  var modal=$('qrModal'),v=$('qrVideo');
   if(modal) modal.classList.remove('show');
-  if(video) video.srcObject=null;
+  if(v) v.srcObject=null;
   document.body.style.overflow='';
 }
-function qrManualSearch() {
-  var inp = $('qrManualInput');
-  var val = inp ? (inp.value||'').trim() : '';
-  if(!val) return;
+function qrManualSearch(){
+  var inp=$('qrManualInput'),val=inp?(inp.value||'').trim():''; if(!val) return;
   closeQR();
   var si=$('searchInput'); if(si) si.value=val;
   searchQuery=val;
   var cb=$('clearBtn'); if(cb) cb.classList.add('show');
   activeFilter='all';
-  document.querySelectorAll('.ftab').forEach(function(t){
-    t.classList.toggle('active',t.dataset.filter==='all');
-  });
+  document.querySelectorAll('.ftab').forEach(function(t){ t.classList.toggle('active',t.dataset.filter==='all'); });
   render();
   showToast('「'+val+'」で検索','🔍');
 }
@@ -1573,44 +1685,33 @@ function qrManualSearch() {
 /* ==============================================================
    棚写真フルスクリーン
    ============================================================== */
-function openPhotoFull(imgSrc) {
-  var img = $('photoFullImg'), el = $('photoFull');
-  if(img) img.src = imgSrc;
+function openPhotoFull(imgSrc){
+  var img=$('photoFullImg'),el=$('photoFull');
+  if(img) img.src=imgSrc;
   if(el)  el.classList.add('show');
   document.body.style.overflow='hidden';
 }
-function closePhotoFull() {
-  var el = $('photoFull');
-  if(el) el.classList.remove('show');
-  document.body.style.overflow='';
-}
+function closePhotoFull(){ var el=$('photoFull'); if(el) el.classList.remove('show'); document.body.style.overflow=''; }
 
 /* ==============================================================
    検索履歴
    ============================================================== */
-function loadHistory() {
-  try { searchHistory = JSON.parse(localStorage.getItem(LS_HISTORY)||'[]'); } catch(e){ searchHistory=[]; }
-}
-function saveHistory(q) {
-  if(!q || q.length < 2) return;
-  searchHistory = [q].concat(searchHistory.filter(function(h){ return h!==q; })).slice(0,5);
-  try { localStorage.setItem(LS_HISTORY, JSON.stringify(searchHistory)); } catch(e){}
+function loadHistory(){ try{ searchHistory=JSON.parse(localStorage.getItem(LS_HISTORY)||'[]'); }catch(e){ searchHistory=[]; } }
+function saveHistory(q){
+  if(!q||q.length<2) return;
+  searchHistory=[q].concat(searchHistory.filter(function(h){ return h!==q; })).slice(0,5);
+  try{ localStorage.setItem(LS_HISTORY,JSON.stringify(searchHistory)); }catch(e){}
   renderHistory();
 }
-function renderHistory() {
-  var bar   = $('historyBar');
-  var chips = $('historyChips');
-  if(!bar || !chips) return;
+function renderHistory(){
+  var bar=$('historyBar'),chips=$('historyChips'); if(!bar||!chips) return;
   if(!searchHistory.length){ bar.style.display='none'; return; }
   bar.style.display='block';
-  chips.innerHTML = searchHistory.map(function(h,i){
-    return '<span class="history-chip" data-q="'+escH(h)+'">'
-      +'🕐 '+escH(h)
-      +'<button class="history-chip-x" data-i="'+i+'" title="削除">✕</button>'
-      +'</span>';
+  chips.innerHTML=searchHistory.map(function(h,i){
+    return '<span class="history-chip" data-q="'+escH(h)+'">🕐 '+escH(h)+'<button class="history-chip-x" data-i="'+i+'">✕</button></span>';
   }).join('');
   chips.querySelectorAll('.history-chip').forEach(function(c){
-    c.addEventListener('click', function(e){
+    c.addEventListener('click',function(e){
       if(e.target.classList.contains('history-chip-x')) return;
       var q=this.dataset.q;
       var si=$('searchInput'); if(si) si.value=q;
@@ -1621,145 +1722,173 @@ function renderHistory() {
     });
   });
   chips.querySelectorAll('.history-chip-x').forEach(function(btn){
-    btn.addEventListener('click', function(e){
+    btn.addEventListener('click',function(e){
       e.stopPropagation();
       searchHistory.splice(parseInt(this.dataset.i),1);
-      try { localStorage.setItem(LS_HISTORY, JSON.stringify(searchHistory)); } catch(ex){}
+      try{ localStorage.setItem(LS_HISTORY,JSON.stringify(searchHistory)); }catch(ex){}
       renderHistory();
     });
   });
 }
 
 /* ==============================================================
-   文字コード判定
+   CSV
    ============================================================== */
-function detectEnc(buf) {
-  var b = new Uint8Array(buf);
-  if(b[0]===0xEF && b[1]===0xBB && b[2]===0xBF) return 'UTF-8';
-  var t   = new TextDecoder('UTF-8',{fatal:false}).decode(buf);
-  var bad = (t.match(/\uFFFD/g)||[]).length;
-  return bad / Math.max(t.length,1) > 0.03 ? 'Shift_JIS' : 'UTF-8';
+function detectEnc(buf){
+  var b=new Uint8Array(buf);
+  if(b[0]===0xEF&&b[1]===0xBB&&b[2]===0xBF) return 'UTF-8';
+  var t=new TextDecoder('UTF-8',{fatal:false}).decode(buf);
+  return (t.match(/\uFFFD/g)||[]).length/Math.max(t.length,1)>0.03?'Shift_JIS':'UTF-8';
 }
-
-/* ==============================================================
-   CSVパーサー
-   ============================================================== */
-function parseCSV(text) {
-  var cleaned = text.replace(/^\uFEFF/,'');
-  var lines   = cleaned.split(/\r?\n/);
-  if(lines.length < 2) throw new Error('データ行がありません。');
-  var headers = splitLine(lines[0]);
-  if(!headers.includes('薬品名'))
-    throw new Error('「薬品名」列が見つかりません。\n読み取った列：'+headers.slice(0,5).join('、'));
-  var result = [];
-  for(var i=1; i<lines.length; i++){
+function parseCSV(text){
+  var cleaned=text.replace(/^\uFEFF/,'');
+  var lines=cleaned.split(/\r?\n/);
+  if(lines.length<2) throw new Error('データ行がありません。');
+  var headers=splitLine(lines[0]);
+  if(!headers.includes('薬品名')) throw new Error('「薬品名」列が見つかりません。\n読み取った列：'+headers.slice(0,5).join('、'));
+  var result=[];
+  for(var i=1;i<lines.length;i++){
     var line=lines[i].trim(); if(!line) continue;
-    var vals=splitLine(line), obj={};
+    var vals=splitLine(line),obj={};
     headers.forEach(function(h,idx){ obj[h.trim()]=(vals[idx]||'').trim(); });
     if(obj['薬品名']) result.push(obj);
   }
   if(!result.length) throw new Error('薬品名のある行が1件もありませんでした。');
   return result;
 }
-function splitLine(line) {
+function splitLine(line){
   var res=[],cur='',inQ=false;
-  for(var i=0; i<line.length; i++){
+  for(var i=0;i<line.length;i++){
     var c=line[i];
     if(c==='"'){ if(inQ&&line[i+1]==='"'){cur+='"';i++;} else inQ=!inQ; }
     else if(c===','&&!inQ){ res.push(cur); cur=''; }
     else cur+=c;
   }
-  return res.push(cur), res;
+  return res.push(cur),res;
 }
 
-/* ==============================================================
-   CSVエクスポート
-   ============================================================== */
-function exportCSV() {
+/* 全件CSV書き出し */
+function exportCSV(){
   if(!allDrugs.length){ showToast('データがありません','❌'); return; }
+  doExport(allDrugs,'yakkyoku_');
+}
+
+/* 要発注のみCSV書き出し */
+function exportReorderCSV(){
+  var list=allDrugs.filter(function(d){ return isStockOut(d)||needsReorder(d); });
+  if(!list.length){ showToast('要発注の薬品はありません','✅'); return; }
+  doExport(list,'yakkyoku_要発注_');
+  showToast('要発注リスト '+list.length+'件を書き出しました');
+}
+function doExport(drugs,prefix){
   var rows=[FIELDS.join(',')];
-  allDrugs.forEach(function(d){
+  drugs.forEach(function(d){
     var row=FIELDS.map(function(f){
       var v=(d[f]||'').replace(/"/g,'""');
-      return (v.includes(',')||v.includes('"')||v.includes('\n')) ? '"'+v+'"' : v;
+      return (v.includes(',')||v.includes('"')||v.includes('\n'))?'"'+v+'"':v;
     });
     rows.push(row.join(','));
   });
   var blob=new Blob(['\uFEFF'+rows.join('\n')],{type:'text/csv;charset=utf-8'});
   var url=URL.createObjectURL(blob);
   var a=document.createElement('a');
-  a.href=url; a.download='yakkyoku_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.href=url; a.download=prefix+new Date().toISOString().slice(0,10)+'.csv';
   document.body.appendChild(a); a.click();
   document.body.removeChild(a); URL.revokeObjectURL(url);
-  showToast('CSVを書き出しました（'+allDrugs.length+'件）');
+}
+
+/* CSVインポートダイアログ */
+function triggerFile(){ var inp=$('csvFileInput'); if(inp){inp.value='';inp.click();} }
+
+function selectImportOpt(mode){
+  importMode=mode;
+  var ow=$('importOptOverwrite'),mg=$('importOptMerge');
+  if(ow) ow.classList.toggle('selected',mode==='overwrite');
+  if(mg) mg.classList.toggle('selected',mode==='merge');
+}
+function cancelImport(){
+  pendingFile=null;
+  var d=$('csvImportDialog'); if(d) d.classList.remove('show');
+  document.body.style.overflow='';
+}
+function confirmImport(){
+  if(!pendingFile) return;
+  var d=$('csvImportDialog'); if(d) d.classList.remove('show');
+  document.body.style.overflow='';
+  var reader=new FileReader();
+  reader.readAsArrayBuffer(pendingFile);
+  reader.onload=function(e){
+    var buf=e.target.result,enc=detectEnc(buf),text;
+    try{ text=new TextDecoder(enc,{fatal:false}).decode(buf); }catch(ex){ text=new TextDecoder('UTF-8',{fatal:false}).decode(buf); }
+    var drugs;
+    try{ drugs=parseCSV(text); }catch(ex){ showError('CSV読込エラー',ex.message); setStatus('err','エラー'); return; }
+    hideError();
+    if(importMode==='merge'){
+      /* 追加モード：薬品名が重複しているものは上書き */
+      var map={};
+      allDrugs.forEach(function(d){ map[d['薬品名']]=d; });
+      drugs.forEach(function(d){ map[d['薬品名']]=d; });
+      allDrugs=Object.values(map);
+      showToast(pendingFile.name+' を追加しました（'+drugs.length+'件）');
+    } else {
+      allDrugs=drugs;
+      showToast(pendingFile.name+' を読み込みました（'+drugs.length+'件）');
+    }
+    saveLS(pendingFile.name);
+    refreshUI(pendingFile.name);
+    pendingFile=null;
+  };
+  reader.onerror=function(){ showError('読込失敗','ファイルにアクセスできませんでした。'); setStatus('err','エラー'); };
 }
 
 /* ==============================================================
    localStorage
    ============================================================== */
-function saveLS(name) {
+function saveLS(name){
   try{
     var j=JSON.stringify(allDrugs);
     if(j.length>4.5*1024*1024){ showToast('データが大きすぎます','⚠️'); return; }
     localStorage.setItem(LS_DATA,j);
-    localStorage.setItem(LS_META,JSON.stringify({
-      fileName:name||'データ', count:allDrugs.length, savedAt:new Date().toISOString()
-    }));
+    localStorage.setItem(LS_META,JSON.stringify({fileName:name||'データ',count:allDrugs.length,savedAt:new Date().toISOString()}));
   }catch(e){}
 }
-function loadLS() {
+function loadLS(){
   try{
-    var j=localStorage.getItem(LS_DATA), m=localStorage.getItem(LS_META);
+    var j=localStorage.getItem(LS_DATA),m=localStorage.getItem(LS_META);
     if(!j) return null;
     var drugs=JSON.parse(j);
     if(!Array.isArray(drugs)||!drugs.length) return null;
-    return {drugs:drugs, meta:m?JSON.parse(m):{}};
+    return {drugs:drugs,meta:m?JSON.parse(m):{}};
   }catch(e){ return null; }
 }
-function clearLS() {
-  try{ localStorage.removeItem(LS_DATA); localStorage.removeItem(LS_META); }catch(e){}
-}
-
-/* ==============================================================
-   ファイル読込
-   ============================================================== */
-function triggerFile() {
-  var inp=$('csvFileInput'); if(inp){inp.value='';inp.click();}
-}
+function clearLS(){ try{ localStorage.removeItem(LS_DATA); localStorage.removeItem(LS_META); }catch(e){} }
 
 /* ==============================================================
    UI更新
    ============================================================== */
-function refreshUI(fileName) {
+function refreshUI(fileName){
   try{
     var meta=null;
     try{ var m=localStorage.getItem(LS_META); meta=m?JSON.parse(m):null; }catch(e){}
-    var when=(meta&&meta.savedAt)
-      ? new Date(meta.savedAt).toLocaleString('ja-JP',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})
-      : '';
+    var when=(meta&&meta.savedAt)?new Date(meta.savedAt).toLocaleString('ja-JP',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}):'';
     var di=$('dbInfo');
-    if(di) di.innerHTML='<strong>'+escH(fileName||'データ')+'</strong>&nbsp;'+allDrugs.length+'件'
-      +(when?'&nbsp;<span class="db-time">'+when+'保存</span>':'');
-
-    var banner=$('csvBanner'), bar=$('dataBar');
+    if(di) di.innerHTML='<strong>'+escH(fileName||'データ')+'</strong>&nbsp;'+allDrugs.length+'件'+(when?'&nbsp;<span class="db-time">'+when+'保存</span>':'');
+    var banner=$('csvBanner'),bar=$('dataBar');
     if(banner) banner.style.display='none';
     if(bar)    bar.classList.add('show');
-
     hideError();
     searchQuery='';
     var si=$('searchInput'); if(si) si.value='';
     var cb=$('clearBtn');    if(cb) cb.classList.remove('show');
     activeFilter='all';
-    document.querySelectorAll('.ftab').forEach(function(t){
-      t.classList.toggle('active',t.dataset.filter==='all');
-    });
+    document.querySelectorAll('.ftab').forEach(function(t){ t.classList.toggle('active',t.dataset.filter==='all'); });
     render();
-  }catch(e){ setStatus('err','表示エラー: '+e.message); }
+  }catch(e){ setStatus('err','表示エラー'); }
 }
-function confirmClear() {
+function confirmClear(){
   if(!window.confirm('全データを削除してよいですか？\nこの操作は元に戻せません。')) return;
   clearLS(); allDrugs=[];
-  var bar=$('dataBar'), banner=$('csvBanner'), list=$('resultList'), fc=$('footerCount');
+  var bar=$('dataBar'),banner=$('csvBanner'),list=$('resultList'),fc=$('footerCount');
   if(bar)    bar.classList.remove('show');
   if(banner) banner.style.display='block';
   if(list)   list.innerHTML='';
@@ -1769,24 +1898,18 @@ function confirmClear() {
 }
 
 /* ==============================================================
-   ソート
+   ソート・フィルター・検索
    ============================================================== */
-var sortModes =['default','shelf','name'];
+var sortModes=['default','shelf','name'];
 var sortLabels=['標準','棚番号順','名称順'];
 function applySort(drugs){
   if(sortMode==='shelf') return drugs.slice().sort(function(a,b){ return (a['棚番号']||'').localeCompare(b['棚番号']||'','ja'); });
   if(sortMode==='name')  return drugs.slice().sort(function(a,b){ return (a['薬品名']||'').localeCompare(b['薬品名']||'','ja'); });
   return drugs;
 }
-
-/* ==============================================================
-   検索
-   ============================================================== */
-function calcScore(drug, q) {
+function calcScore(drug,q){
   if(!q) return 1;
-  var flds=[{k:'薬品名',w:10},{k:'検索用別名',w:9},{k:'名称ゆれ',w:8},
-            {k:'一般名',w:7},{k:'棚番号',w:6},{k:'メーカー',w:4},
-            {k:'規格',w:3},{k:'剤形',w:3},{k:'棚の詳細位置',w:2},{k:'備考',w:1}];
+  var flds=[{k:'薬品名',w:10},{k:'類似薬注意',w:5},{k:'一般名',w:7},{k:'棚番号',w:6},{k:'メーカー',w:4},{k:'規格',w:3},{k:'剤形',w:3},{k:'棚の詳細位置',w:2}];
   var best=0;
   for(var i=0;i<flds.length;i++){
     var v=norm(drug[flds[i].k]||''); if(!v) continue;
@@ -1795,10 +1918,11 @@ function calcScore(drug, q) {
   }
   return best;
 }
-function applyFilter(drugs, key) {
+function applyFilter(drugs,key){
   if(!key||key==='all') return drugs;
-  if(FILTER_KW[key]==='__warn__') return drugs.filter(function(d){ return !!d['類似薬注意']; });
-  if(FILTER_KW[key]==='__fav__')  return drugs.filter(function(d){ return !!(favorites&&favorites[d['薬品名']]); });
+  if(FILTER_KW[key]==='__warn__')    return drugs.filter(function(d){ return !!d['類似薬注意']; });
+  if(FILTER_KW[key]==='__fav__')     return drugs.filter(function(d){ return !!(favorites&&favorites[d['薬品名']]); });
+  if(FILTER_KW[key]==='__reorder__') return drugs.filter(function(d){ return isStockOut(d)||needsReorder(d); });
   var kws=FILTER_KW[key]; if(!kws) return drugs;
   return drugs.filter(function(d){
     var f=norm(d['剤形']||'');
@@ -1806,15 +1930,12 @@ function applyFilter(drugs, key) {
     return false;
   });
 }
-function doSearch() {
+function doSearch(){
   var base=applyFilter(allDrugs,activeFilter);
   var q=norm(searchQuery);
   if(!q) return applySort(base).slice(0,80);
   var sc=[];
-  for(var i=0;i<base.length;i++){
-    var s=calcScore(base[i],q);
-    if(s>0) sc.push({d:base[i],s:s});
-  }
+  for(var i=0;i<base.length;i++){ var s=calcScore(base[i],q); if(s>0) sc.push({d:base[i],s:s}); }
   sc.sort(function(a,b){ return b.s-a.s; });
   return sc.slice(0,50).map(function(x){ return x.d; });
 }
@@ -1822,66 +1943,118 @@ function doSearch() {
 /* ==============================================================
    レンダリング
    ============================================================== */
-function render() {
+function render(){
   try{
     filteredDrugs=doSearch();
-    var list=$('resultList'), stText=$('statusText'), badge=$('countBadge'), fc=$('footerCount');
+    var list=$('resultList'),stText=$('statusText'),badge=$('countBadge'),fc=$('footerCount');
     var q=searchQuery;
     if(fc) fc.textContent=filteredDrugs.length+' 件';
     if(badge){ if(q&&filteredDrugs.length){ badge.textContent=filteredDrugs.length+' 件'; badge.classList.add('show'); } else { badge.classList.remove('show'); } }
     if(!list) return;
-    if(!allDrugs.length){
-      list.innerHTML='';
-      setStatus('warn','薬品を追加するか、CSVを読み込んでください');
-      return;
-    }
+    if(!allDrugs.length){ list.innerHTML=''; setStatus('warn','薬品を追加するか、CSVを読み込んでください'); return; }
     if(!filteredDrugs.length){
       list.innerHTML='<div class="empty-state"><div class="empty-icon">🔎</div><div class="empty-title">見つかりませんでした</div><div class="empty-sub">別のキーワードで検索するか、「＋ 薬品を追加」で登録してください。</div></div>';
       if(stText) stText.textContent='「'+q+'」に一致しません';
       return;
     }
     var html='';
-    for(var i=0;i<filteredDrugs.length;i++) html+=buildCard(filteredDrugs[i],i,q);
+    if(groupMode && !searchQuery){
+      /* グループ表示 */
+      var groups={}, order=[];
+      filteredDrugs.forEach(function(d,i){
+        var key=(d['棚番号']||'その他').replace(/-.*$/,'').trim()||'その他';
+        if(!groups[key]){ groups[key]=[]; order.push(key); }
+        groups[key].push({d:d,i:i});
+      });
+      order.forEach(function(key){
+        var items=groups[key];
+        html+='<div class="group-header"><span>'+escH(key)+'棚</span><span class="group-count">'+items.length+'件</span></div>';
+        items.forEach(function(x){ html+=buildCard(x.d,x.i,q); });
+      });
+    } else {
+      for(var i=0;i<filteredDrugs.length;i++) html+=buildCard(filteredDrugs[i],i,q);
+    }
     list.innerHTML=html;
+    if(selectMode) list.classList.add('selectable-mode');
+    /* 選択状態を復元 */
     list.querySelectorAll('.drug-card').forEach(function(card){
       var idx=parseInt(card.dataset.idx,10);
+      var d=filteredDrugs[idx]; if(!d) return;
+      if(selectedSet[d['薬品名']]) card.classList.add('selected');
       card.addEventListener('click',function(e){
         if(e.target.classList.contains('card-edit-btn')||e.target.classList.contains('fav-btn')) return;
-        openModal(filteredDrugs[idx]);
+        if(e.target.classList.contains('stock-plus')||e.target.classList.contains('stock-minus')) return;
+        if(selectMode){ toggleSelect(d['薬品名']); return; }
+        openModal(d);
       });
-      card.addEventListener('keydown',function(e){ if(e.key==='Enter'||e.key===' ') openModal(filteredDrugs[idx]); });
+      card.addEventListener('keydown',function(e){ if(e.key==='Enter'||e.key===' '){ if(selectMode) toggleSelect(d['薬品名']); else openModal(d); } });
       var eb=card.querySelector('.card-edit-btn');
-      if(eb) eb.addEventListener('click',function(e){ e.stopPropagation(); openEdit(allDrugs.indexOf(filteredDrugs[idx])); });
+      if(eb) eb.addEventListener('click',function(e){ e.stopPropagation(); openEdit(allDrugs.indexOf(d)); });
       var fb=card.querySelector('.fav-btn');
       if(fb) fb.addEventListener('click',function(e){ e.stopPropagation(); toggleFav(fb.dataset.name); });
+      /* 在庫 +/- */
+      var sp=card.querySelector('.stock-plus'), sm=card.querySelector('.stock-minus');
+      if(sp) sp.addEventListener('click',function(e){ e.stopPropagation(); changeStock(d['薬品名'],+1); });
+      if(sm) sm.addEventListener('click',function(e){ e.stopPropagation(); changeStock(d['薬品名'],-1); });
     });
     if(stText) stText.textContent=q?'「'+q+'」で'+filteredDrugs.length+'件':'全'+allDrugs.length+'件 / 表示'+filteredDrugs.length+'件';
     setStatus('ok');
   }catch(e){ setStatus('err','描画エラー'); console.error('render error:',e); }
 }
+
 function buildCard(d,idx,q){
-  var hw   =!!(d['類似薬注意']);
-  var isGG =d['先発/後発']==='後発'||d['先発/後発']==='GE';
-  var isBr =d['先発/後発']==='先発';
-  var isFav=!!(favorites&&favorites[d['薬品名']]);
+  var hw      =!!(d['類似薬注意']);
+  var isGG    =d['先発/後発']==='後発'||d['先発/後発']==='GE';
+  var isBr    =d['先発/後発']==='先発';
+  var isFav   =!!(favorites&&favorites[d['薬品名']]);
+  var stock   =getStock(d);
+  var reorder =getReorder(d);
+  var stockOut=isStockOut(d);
+  var reord   =needsReorder(d);
+
   var chips='';
   if(d['メーカー'])  chips+='<span class="chip maker">🏭 '+hlText(d['メーカー'],q)+'</span>';
   if(d['規格'])      chips+='<span class="chip spec">'+escH(d['規格'])+'</span>';
   if(d['剤形'])      chips+='<span class="chip form">'+escH(d['剤形'])+'</span>';
   if(isGG)           chips+='<span class="chip gg">後発</span>';
   if(isBr)           chips+='<span class="chip brand">先発</span>';
-  return '<div class="drug-card'+(hw?' has-warning':'')+(isFav?' is-fav':'')+'" data-idx="'+idx+'" role="button" tabindex="0" aria-label="'+escH(d['薬品名'])+'">'
+
+  /* 在庫情報 */
+  var stockHTML='';
+  if(stock!==null){
+    var cls=stockOut?'stockout':reord?'reorder':'';
+    var label=stockOut?'🔴 在庫切れ':reord?'🟠 要発注（'+stock+'）':'在庫 '+stock;
+    stockHTML='<div style="display:flex;align-items:center;gap:4px;margin-top:4px">'
+      +'<span class="stock-badge '+cls+'">'+label+'</span>'
+      +'<button class="stock-minus xs" style="min-height:22px;padding:1px 8px;font-size:.8rem" aria-label="在庫-1">−</button>'
+      +'<button class="stock-plus xs" style="min-height:22px;padding:1px 8px;font-size:.8rem" aria-label="在庫+1">＋</button>'
+      +'</div>';
+  }
+
+  /* 最終更新 */
+  var updatedHTML='';
+  if(d['更新日時']){
+    try{
+      var dt=new Date(d['更新日時']);
+      updatedHTML='<div style="font-size:.62rem;color:var(--muted);margin-top:3px">更新 '+dt.toLocaleString('ja-JP',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})+'</div>';
+    }catch(ex){}
+  }
+
+  return '<div class="drug-card'+(hw?' has-warning':'')+(isFav?' is-fav':'')+(stockOut?' stock-out':'')+'" data-idx="'+idx+'" role="button" tabindex="0" aria-label="'+escH(d['薬品名'])+'">'
+    +(selectMode?'<div class="card-select">'+(selectedSet[d['薬品名']]?'✓':'')+'</div>':'')
     +'<button class="card-edit-btn" aria-label="編集">✏️ 編集</button>'
     +'<div class="card-top">'
       +'<div class="drug-name">'+hlText(d['薬品名'],q)+'</div>'
       +'<div class="card-right">'
         +(d['棚番号']?'<div class="shelf-badge">'+escH(d['棚番号'])+'</div>':'')
-        +'<button class="fav-btn'+(isFav?' starred':'')+'" aria-label="お気に入り" data-name="'+escH(d['薬品名'])+'">'+(isFav?'⭐':'☆')+'</button>'
+        +'<button class="fav-btn'+(isFav?' starred':'')+'" aria-label="お気に入り" data-name="'+escH(d['薬品名'])+'">'+( isFav?'⭐':'☆')+'</button>'
       +'</div>'
     +'</div>'
     +(d['一般名']?'<div class="generic-name">'+hlText(d['一般名'],q)+'</div>':'')
     +'<div class="card-meta">'+chips+'</div>'
     +(hw?'<div class="warn-row">⚠️ '+escH(d['類似薬注意'])+'</div>':'')
+    +stockHTML
+    +updatedHTML
     +'</div>';
 }
 
@@ -1891,17 +2064,30 @@ function buildCard(d,idx,q){
 function openModal(drug){
   try{
     currentDrug=drug;
-    var hw=!!(drug['類似薬注意']);
     var tn=$('modalTitle'); if(tn) tn.textContent=drug['薬品名']||'—';
-
-    /* 棚写真HTML（onerrorをJS側で処理してインライン属性の問題を回避） */
     var photoHTML='';
-    if(drug['棚写真URL']){
-      photoHTML='<img class="shelf-photo" src="'+escH(drug['棚写真URL'])+'" alt="棚写真" id="modalPhoto">';
+    if(drug['棚写真URL']) photoHTML='<img class="shelf-photo" src="'+escH(drug['棚写真URL'])+'" alt="棚写真" id="modalPhoto">';
+    var body=$('modalBody'); if(!body) return;
+    var hw=!!(drug['類似薬注意']);
+    var stock=getStock(drug),reorder=getReorder(drug),stockOut=isStockOut(drug),reord=needsReorder(drug);
+    var stockInfo='';
+    if(stock!==null){
+      var cls=stockOut?'stockout':reord?'reorder':'';
+      var lbl=stockOut?'🔴 在庫切れ':reord?'🟠 要発注':'✅ 在庫あり';
+      stockInfo='<div class="ditem full"><div class="dlabel">在庫状況</div>'
+        +'<div class="dvalue" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
+        +'<span class="stock-badge '+cls+'">'+lbl+'</span>'
+        +'<span>在庫数：<strong>'+stock+'</strong>'+(reorder?'　発注点：'+reorder:'')+'</span>'
+        +'<div style="display:flex;gap:4px">'
+        +'<button class="stock-minus xs" style="min-height:26px" aria-label="在庫-1" data-drug="'+escH(drug['薬品名'])+'">−1</button>'
+        +'<button class="stock-plus xs" style="min-height:26px" aria-label="在庫+1" data-drug="'+escH(drug['薬品名'])+'">＋1</button>'
+        +'</div>'
+        +'</div></div>';
     }
-
-    var body=$('modalBody');
-    if(!body) return;
+    var updated='';
+    if(drug['更新日時']){
+      try{ updated='<div class="ditem full"><div class="dlabel">最終更新</div><div class="dvalue">'+new Date(drug['更新日時']).toLocaleString('ja-JP')+'</div></div>'; }catch(ex){}
+    }
     body.innerHTML=
       photoHTML
       +(drug['棚番号']
@@ -1910,33 +2096,38 @@ function openModal(drug){
           +'<div class="shelf-hero-num">'+escH(drug['棚番号'])+'</div>'
           +(drug['棚の詳細位置']?'<div class="shelf-hero-sub">'+escH(drug['棚の詳細位置'])+'</div>':'')
          +'</div></div>':'')
-      +(hw?'<div class="warn-block"><div class="warn-block-ico">⚠️</div>'
-        +'<div class="warn-block-body"><div class="warn-block-title">類似薬・名称注意</div>'
-        +escH(drug['類似薬注意'])+'</div></div>':'')
+      +(hw?'<div class="warn-block"><div class="warn-block-ico">⚠️</div><div class="warn-block-body"><div class="warn-block-title">類似薬・名称注意</div>'+escH(drug['類似薬注意'])+'</div></div>':'')
       +'<div class="detail-sec"><div class="detail-sec-title">基本情報</div><div class="detail-grid">'
         +di('薬品名',drug['薬品名'],true)+di('一般名',drug['一般名'],true)
         +di('規格',drug['規格'],false)+di('剤形',drug['剤形'],false)
         +di('採用メーカー',drug['メーカー'],true)+di('先発/後発',drug['先発/後発'],false)
         +di('採用区分',drug['採用区分'],false)
       +'</div></div>'
-      +((drug['保存区分']||drug['発注先'])
+      +((stock!==null||drug['保存区分']||drug['発注先'])
         ?'<div class="detail-sec"><div class="detail-sec-title">管理情報</div><div class="detail-grid">'
-          +(drug['保存区分']?'<div class="ditem full"><div class="dlabel">保存区分</div>'
-            +'<div class="dvalue">'+escH(drug['保存区分'])+buildStags(drug['保存区分'])+'</div></div>':'')
+          +stockInfo
+          +(drug['保存区分']?'<div class="ditem full"><div class="dlabel">保存区分</div><div class="dvalue">'+escH(drug['保存区分'])+buildStags(drug['保存区分'])+'</div></div>':'')
           +di('発注先',drug['発注先'],true)
-        +'</div></div>':'')
-      +(drug['備考']?'<div class="detail-sec"><div class="detail-sec-title">備考</div>'
-        +'<div class="ditem"><div class="dvalue" style="font-size:.84rem;line-height:1.75">'+escH(drug['備考'])+'</div></div></div>':'');
-
-    /* 棚写真のイベントをJSで設定（インライン属性を避ける） */
+          +updated
+        +'</div></div>':'');
     var photoEl=$('modalPhoto');
     if(photoEl){
       photoEl.addEventListener('click',function(){ openPhotoFull(drug['棚写真URL']); });
       photoEl.addEventListener('error',function(){ this.style.display='none'; });
     }
-
+    /* 在庫ボタン */
+    body.querySelectorAll('.stock-plus,.stock-minus').forEach(function(btn){
+      btn.addEventListener('click',function(e){
+        e.stopPropagation();
+        var delta=this.classList.contains('stock-plus')?+1:-1;
+        changeStock(drug['薬品名'],delta);
+        /* モーダルを再表示 */
+        var updated=allDrugs.find(function(d){ return d['薬品名']===drug['薬品名']; });
+        if(updated){ currentDrug=updated; openModal(updated); }
+      });
+    });
     updateModalFavBtn(drug['薬品名']);
-    var modal=$('modal'), sheet=$('modalSheet');
+    var modal=$('modal'),sheet=$('modalSheet');
     if(modal) modal.classList.add('show');
     if(sheet) sheet.scrollTop=0;
     document.body.style.overflow='hidden';
@@ -1971,10 +2162,8 @@ function openEdit(drugIdx){
   var drug=isNew?{}:(allDrugs[editingIdx]||{});
   var et=$('editTitle'); if(et) et.textContent=isNew?'薬品を追加':'薬品を編集';
   var dz=$('deleteZone'); if(dz) dz.style.display=isNew?'none':'block';
-  FIELD_MAP.forEach(function(f){
-    var el=$(f.id); if(el) el.value=drug[f.key]||'';
-  });
-  var em=$('editModal'), es=$('editSheet');
+  FIELD_MAP.forEach(function(f){ var el=$(f.id); if(el) el.value=drug[f.key]||''; });
+  var em=$('editModal'),es=$('editSheet');
   if(em) em.classList.add('show');
   if(es) es.scrollTop=0;
   document.body.style.overflow='hidden';
@@ -1988,11 +2177,17 @@ function saveEdit(){
   var nameEl=$('ef_name');
   var name=(nameEl?nameEl.value:'').trim();
   if(!name){ alert('薬品名は必須です。'); if(nameEl) nameEl.focus(); return; }
-  var obj={};
-  FIELD_MAP.forEach(function(f){
-    var el=$(f.id); obj[f.key]=el?(el.value||'').trim():'';
-  });
+  /* 重複チェック */
   var isNew=editingIdx===-1;
+  if(isNew){
+    var dup=allDrugs.find(function(d){ return d['薬品名']===name; });
+    if(dup){
+      if(!window.confirm('「'+name+'」はすでに登録されています。\n別の薬品として追加しますか？')) return;
+    }
+  }
+  var obj={};
+  FIELD_MAP.forEach(function(f){ var el=$(f.id); obj[f.key]=el?(el.value||'').trim():''; });
+  obj['更新日時']=new Date().toISOString();
   if(isNew){ allDrugs.unshift(obj); } else { allDrugs[editingIdx]=obj; }
   saveLS('手動データ');
   closeEdit();
@@ -2006,49 +2201,20 @@ function deleteDrug(){
   if(!window.confirm('「'+name+'」を削除しますか？\nこの操作は元に戻せません。')) return;
   allDrugs.splice(editingIdx,1);
   saveLS('手動データ');
-  closeEdit();
-  hideError();
+  closeEdit(); hideError();
   refreshUI('手動データ');
   showToast('削除：'+name,'🗑️');
 }
 
 /* ==============================================================
-   音声入力
-   ============================================================== */
-function initVoice(){
-  var btn=$('voiceBtn');
-  if(!btn) return;
-  btn.addEventListener('click',function(){
-    var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-    if(!SR){ showToast('このブラウザは音声入力に対応していません','❌'); return; }
-    if(recognition){ recognition.stop(); recognition=null; btn.textContent='🎤'; return; }
-    recognition=new SR();
-    recognition.lang='ja-JP'; recognition.interimResults=false;
-    btn.textContent='🔴';
-    recognition.onresult=function(e){
-      var t=e.results[0][0].transcript;
-      var si=$('searchInput'); if(si) si.value=t;
-      searchQuery=t;
-      var cb=$('clearBtn'); if(cb) cb.classList.add('show');
-      render();
-      btn.textContent='🎤'; recognition=null;
-    };
-    recognition.onerror=recognition.onend=function(){ btn.textContent='🎤'; recognition=null; };
-    recognition.start();
-  });
-}
-
-/* ==============================================================
-   起動（すべてのDOM操作を安全に実行）
+   起動
    ============================================================== */
 (function init(){
-  /* --- 各種データ復元 --- */
   try{ loadFav(); }catch(e){}
   try{ loadHistory(); }catch(e){}
-  try{ loadPharmacies(); }catch(e){}
   try{ renderHistory(); }catch(e){}
 
-  /* --- テーマ復元 --- */
+  /* テーマ復元 */
   (function(){
     var t='light';
     try{
@@ -2059,16 +2225,18 @@ function initVoice(){
     applyTheme(t);
   })();
 
-  /* --- イベント登録（全部 on() でnull安全） --- */
-  on('themeBtn','click',function(){
-    applyTheme(document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark');
-  });
+  /* イベント登録 */
+  on('themeBtn','click',function(){ applyTheme(document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark'); });
   on('csvIconBtn','click',triggerFile);
   on('sortBtn','click',function(){
     var idx=sortModes.indexOf(sortMode);
     sortMode=sortModes[(idx+1)%3];
     var sl=$('sortLabel'); if(sl) sl.textContent=sortLabels[sortModes.indexOf(sortMode)];
     render();
+  });
+  on('groupBtn','click',toggleGroupMode);
+  on('selectBtn','click',function(){
+    if(selectMode) exitSelectMode(); else enterSelectMode();
   });
   on('modalEditBtn','click',function(){ if(!currentDrug) return; var idx=allDrugs.indexOf(currentDrug); closeModal(); openEdit(idx); });
   on('modalFavBtn','click',toggleFavFromModal);
@@ -2078,14 +2246,9 @@ function initVoice(){
   on('scrollTop','click',function(){ window.scrollTo({top:0,behavior:'smooth'}); });
   on('qrBtn','click',openQR);
   on('qrModal','click',function(e){ if(e.target===this) closeQR(); });
-  on('pharmBtn','click',function(){
-    var bar=$('pharmacyBar');
-    if(bar){ bar.classList.toggle('show'); renderPharmList(); }
-  });
-  on('pharmNameInput','keydown',function(e){ if(e.key==='Enter') addPharmacy(); });
   on('qrManualInput','keydown',function(e){ if(e.key==='Enter') qrManualSearch(); });
+  on('csvImportDialog','click',function(e){ if(e.target===this) cancelImport(); });
 
-  /* searchInput */
   var si=$('searchInput');
   if(si) si.addEventListener('input',function(){
     searchQuery=this.value;
@@ -2095,8 +2258,6 @@ function initVoice(){
     clearTimeout(searchTimer);
     searchTimer=setTimeout(function(){ render(); if(searchQuery.length>=2) saveHistory(searchQuery); },120);
   });
-
-  /* clearBtn */
   var cb=$('clearBtn');
   if(cb) cb.addEventListener('click',function(){
     var si2=$('searchInput'); if(si2) si2.value='';
@@ -2104,8 +2265,6 @@ function initVoice(){
     var si3=$('searchInput'); if(si3) si3.focus();
     renderHistory(); render();
   });
-
-  /* filterTabs */
   var ft=$('filterTabs');
   if(ft) ft.addEventListener('click',function(e){
     var tab=e.target.closest('.ftab'); if(!tab) return;
@@ -2113,56 +2272,52 @@ function initVoice(){
     tab.classList.add('active'); activeFilter=tab.dataset.filter; render();
   });
 
-  /* csvFileInput */
+  /* CSVファイル選択 */
   var fi=$('csvFileInput');
   if(fi) fi.addEventListener('change',function(){
     var file=this.files[0]; if(!file) return;
     if(file.size>10*1024*1024){ showToast('ファイルが大きすぎます','❌'); return; }
-    setStatus('warn','読み込み中...');
-    var reader=new FileReader();
-    reader.readAsArrayBuffer(file);
-    reader.onload=function(e){
-      var buf=e.target.result, enc=detectEnc(buf), text;
-      try{ text=new TextDecoder(enc,{fatal:false}).decode(buf); }catch(ex){ text=new TextDecoder('UTF-8',{fatal:false}).decode(buf); }
-      var drugs;
-      try{ drugs=parseCSV(text); }catch(ex){ showError('CSV読込エラー',ex.message); setStatus('err','エラー'); return; }
-      hideError(); allDrugs=drugs; saveLS(file.name); refreshUI(file.name);
-      showToast(file.name+' を読み込みました（'+drugs.length+'件）');
-    };
-    reader.onerror=function(){ showError('読込失敗','ファイルにアクセスできませんでした。'); setStatus('err','エラー'); };
+    pendingFile=file;
+    /* データがある場合はダイアログを表示、ない場合は即上書き */
+    if(allDrugs.length>0){
+      var fn=$('importFileName'); if(fn) fn.textContent=file.name;
+      importMode='overwrite';
+      selectImportOpt('overwrite');
+      var d=$('csvImportDialog'); if(d) d.classList.add('show');
+      document.body.style.overflow='hidden';
+    } else {
+      importMode='overwrite';
+      confirmImport();
+    }
   });
 
-  /* スクロールトップ */
   window.addEventListener('scroll',function(){ var st=$('scrollTop'); if(st) st.classList.toggle('show',window.scrollY>300); },{passive:true});
-
-  /* キーボードショートカット */
   document.addEventListener('keydown',function(e){
     if(e.key==='/'&&!['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName)){
       e.preventDefault(); var si2=$('searchInput'); if(si2){si2.focus();si2.select();}
     }
     if(e.key==='Escape'){
-      var em=$('editModal'), modal=$('modal');
-      if(em&&em.classList.contains('show')) closeEdit();
+      var em=$('editModal'),modal=$('modal'),qr=$('qrModal'),imp=$('csvImportDialog');
+      if(imp&&imp.classList.contains('show')) cancelImport();
+      else if(em&&em.classList.contains('show')) closeEdit();
       else if(modal&&modal.classList.contains('show')) closeModal();
+      else if(qr&&qr.classList.contains('show')) closeQR();
+      else if(selectMode) exitSelectMode();
       else if(searchQuery){ var cb2=$('clearBtn'); if(cb2) cb2.click(); }
     }
   });
 
-  /* 音声入力 */
-  initVoice();
-
-  /* --- データ復元 or バナー表示 --- */
+  /* データ復元 */
   var saved=null;
   try{ saved=loadLS(); }catch(e){}
-
-  if(saved && saved.drugs && saved.drugs.length){
+  if(saved&&saved.drugs&&saved.drugs.length){
     allDrugs=saved.drugs;
-    var meta=saved.meta||{}, when='';
+    var meta=saved.meta||{},when='';
     try{ if(meta.savedAt) when=new Date(meta.savedAt).toLocaleString('ja-JP',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}); }catch(e){}
     refreshUI(meta.fileName||'データ');
     setStatus('ok',(meta.fileName||'データ')+'('+allDrugs.length+'件)を復元'+(when?' '+when:''));
   } else {
-    var banner=$('csvBanner'), list=$('resultList');
+    var banner=$('csvBanner'),list=$('resultList');
     if(banner) banner.style.display='block';
     if(list)   list.innerHTML='';
     setStatus('warn','CSVを読み込むか、薬品を追加してください');
