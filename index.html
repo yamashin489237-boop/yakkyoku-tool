@@ -1,0 +1,2198 @@
+<!DOCTYPE html>
+
+<html lang="ja" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>薬局採用品検索</title>
+<!--
+  薬局採用品検索ツール v4.0
+  改良点：
+  [UX]
+  1. 棚番号を「A棚 1段目 左1」形式で大きく・分かりやすく表示
+  2. 検索ヒット件数をリアルタイムバッジで表示
+  3. よく検索する薬（履歴）を最大5件保存・表示
+  4. 空データ時のガイドをより丁寧に
+  5. トースト通知（保存・削除・エラーをポップアップで）
+  6. スクロールトップボタン
+  7. キーボードショートカット（/ で検索フォーカス）
+  [デザイン]
+  8. ダーク/ライト両テーマのコントラスト・影・余白を大幅改善
+  9. カードの視認性向上（薬品名を大きく・棚番号を目立たせる）
+  10. フィルタータブをアイコン付きに
+  11. ライトモードはクリーンな白+青で病院らしく
+  12. ダークモードは深みのある紺+シアンで夜間視認性重視
+  [機能]
+  13. 検索ボックスに音声入力ボタン（対応ブラウザのみ）
+  14. 棚番号で並び替えオプション
+  15. 印刷用CSS（採用品一覧を印刷できる）
+  16. サービスワーカー不要・オフライン動作（localStorage活用）
+-->
+<style>
+
+/* ============================================================
+テーマ変数
+============================================================ */
+:root,[data-theme=“dark”]{
+–bg:        #0b0e17;
+–bg2:       #0f1220;
+–surface:   #151824;
+–card:      #1c2030;
+–card2:     #181c2a;
+–card-h:    #202438;
+–border:    #272d45;
+–border2:   #1e2338;
+–accent:    #38bdf8;
+–accent2:   #0284c7;
+–accent-g:  linear-gradient(135deg,#0284c7,#38bdf8);
+–accent-gl: linear-gradient(135deg,#0ea5e9,#67e8f9);
+–warn:      #fb923c;
+–warn-bg:   rgba(251,146,60,.10);
+–danger:    #f87171;
+–danger-bg: rgba(248,113,113,.10);
+–success:   #4ade80;
+–success-bg:rgba(74,222,128,.10);
+–text:      #e2e8f4;
+–text2:     #94a3bc;
+–muted:     #64748b;
+–tag-bg:    #1a2035;
+–input-bg:  #0f1220;
+–shadow:    0 8px 32px rgba(0,0,0,.55);
+–shadow-sm: 0 2px 10px rgba(0,0,0,.40);
+–shadow-card:0 2px 8px rgba(0,0,0,.35);
+–overlay:   rgba(0,0,0,.80);
+–radius:    14px;
+–radius-sm: 9px;
+}
+[data-theme=“light”]{
+/* ヘッダーは濃い青 / 背景はくっきりしたブルーグレー / カードは白 — 三層の階層を明確に */
+–bg:        #c8d3e8;
+–bg2:       #bfcadf;
+–surface:   #1a4570;
+–card:      #ffffff;
+–card2:     #eef2fb;
+–card-h:    #e4eaf6;
+–border:    #a8b8d4;
+–border2:   #bfcce0;
+–accent:    #38bdf8;
+–accent2:   #0ea5e9;
+–accent-g:  linear-gradient(135deg,#0369a1,#0ea5e9);
+–accent-gl: linear-gradient(135deg,#0284c7,#38bdf8);
+–warn:      #c2410c;
+–warn-bg:   rgba(194,65,12,.09);
+–danger:    #b91c1c;
+–danger-bg: rgba(185,28,28,.09);
+–success:   #15803d;
+–success-bg:rgba(21,128,61,.09);
+–text:      #0f172a;
+–text2:     #1e3a58;
+–muted:     #3d5a7a;
+–tag-bg:    #d8e2f4;
+–input-bg:  #ffffff;
+–shadow:    0 8px 32px rgba(0,0,0,.20);
+–shadow-sm: 0 2px 10px rgba(0,0,0,.16);
+–shadow-card:0 2px 12px rgba(0,0,0,.13),0 0 0 1px rgba(0,0,0,.06);
+–overlay:   rgba(10,20,40,.65);
+–radius:    14px;
+–radius-sm: 9px;
+}
+
+/* ============================================================
+リセット・基本
+============================================================ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:16px;-webkit-text-size-adjust:100%}
+body{
+font-family:“Hiragino Sans”,“Hiragino Kaku Gothic ProN”,“Yu Gothic UI”,“Yu Gothic”,
+“Noto Sans JP”,Meiryo,sans-serif;
+background:var(–bg);color:var(–text);min-height:100vh;
+-webkit-tap-highlight-color:transparent;
+transition:background .2s,color .2s;
+overscroll-behavior:none;
+}
+button,input,select,textarea{font-family:inherit}
+button{cursor:pointer;border:none;background:none}
+
+/* ============================================================
+ヘッダー
+============================================================ */
+header{
+position:sticky;top:0;z-index:200;
+background:var(–surface);
+border-bottom:1px solid var(–border);
+padding:10px 16px 0;
+box-shadow:var(–shadow-sm);
+transition:background .2s,border-color .2s;
+}
+.header-row1{
+display:flex;align-items:center;gap:8px;margin-bottom:9px;
+}
+.logo{display:flex;align-items:center;gap:5px;flex-shrink:0;user-select:none;}
+.logo-pill{
+background:var(–accent-g);color:#fff;
+font-size:.64rem;font-weight:800;letter-spacing:.06em;
+padding:4px 10px;border-radius:20px;white-space:nowrap;
+}
+
+/* 検索ボックス */
+.search-wrap{position:relative;flex:1}
+.search-icon{
+position:absolute;left:11px;top:50%;transform:translateY(-50%);
+color:var(–muted);font-size:.9rem;pointer-events:none;
+}
+#searchInput{
+width:100%;background:var(–input-bg);
+border:1.5px solid var(–border);border-radius:var(–radius-sm);
+padding:11px 70px 11px 34px;font-size:.95rem;color:var(–text);
+outline:none;transition:border-color .15s,box-shadow .15s;
+-webkit-appearance:none;
+}
+#searchInput::placeholder{color:var(–muted)}
+#searchInput:focus{
+border-color:var(–accent);
+box-shadow:0 0 0 3px rgba(56,189,248,.15);
+}
+.search-actions{
+position:absolute;right:6px;top:50%;transform:translateY(-50%);
+display:flex;align-items:center;gap:2px;
+}
+.search-icon-btn{
+width:28px;height:28px;border-radius:6px;
+display:flex;align-items:center;justify-content:center;
+font-size:.85rem;color:var(–muted);
+transition:color .15s,background .15s;
+}
+.search-icon-btn:hover{color:var(–accent);background:var(–tag-bg)}
+.clear-btn{display:none}
+.clear-btn.show{display:flex}
+
+/* ヘッダー右ボタン群 */
+.header-btns{display:flex;gap:5px;flex-shrink:0}
+.hbtn{
+width:34px;height:34px;border-radius:var(–radius-sm);
+display:flex;align-items:center;justify-content:center;
+font-size:.95rem;color:var(–text2);
+background:var(–tag-bg);border:1px solid var(–border);
+transition:all .15s;
+}
+.hbtn:hover{border-color:var(–accent);color:var(–accent);background:var(–card-h)}
+
+/* フィルタータブ */
+.filter-tabs{
+display:flex;gap:5px;padding-bottom:10px;
+overflow-x:auto;scrollbar-width:none;
+}
+.filter-tabs::-webkit-scrollbar{display:none}
+.ftab{
+flex-shrink:0;background:var(–tag-bg);
+border:1.5px solid var(–border2);border-radius:20px;
+padding:5px 13px;font-size:.73rem;color:var(–muted);
+transition:all .15s;white-space:nowrap;min-height:32px;
+display:inline-flex;align-items:center;gap:5px;
+font-weight:500;
+}
+.ftab svg{flex-shrink:0;opacity:.65;transition:opacity .15s;}
+.ftab:hover{border-color:var(–accent);color:var(–text);background:var(–card-h)}
+.ftab:hover svg{opacity:1}
+.ftab.active{
+background:var(–accent-g);border-color:transparent;
+color:#fff;font-weight:700;
+box-shadow:0 2px 8px rgba(2,132,199,.3);
+}
+.ftab.active svg{opacity:1}
+.ftab[data-filter=“warning”].active{
+background:linear-gradient(135deg,#b45309,#d97706);
+box-shadow:0 2px 8px rgba(180,83,9,.3);
+}
+.ftab[data-filter=“fav”].active{
+background:linear-gradient(135deg,#b45309,#f59e0b);
+box-shadow:0 2px 8px rgba(180,83,9,.3);
+}
+
+/* ============================================================
+メインエリア
+============================================================ */
+main{
+padding:12px 16px 100px;
+max-width:720px;
+margin:0 auto;
+width:100%;
+}
+
+/* ============================================================
+ステータスバー
+============================================================ */
+.status-bar{
+display:flex;align-items:center;justify-content:space-between;
+gap:8px;margin-bottom:8px;min-height:26px;
+padding:0 2px;
+}
+.status-left{display:flex;align-items:center;gap:6px}
+.status-dot{
+width:6px;height:6px;border-radius:50%;
+background:var(–success);flex-shrink:0;
+animation:pulse 2.5s infinite;
+}
+.status-dot.warn{background:var(–warn);animation:none}
+.status-dot.err{background:var(–danger);animation:none}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}
+#statusText{font-size:.72rem;color:var(–muted)}
+.count-badge{
+font-size:.68rem;font-weight:700;
+background:var(–accent-g);color:#fff;
+padding:2px 8px;border-radius:20px;
+display:none;
+}
+.count-badge.show{display:inline-block}
+.sort-btn{
+font-size:.68rem;color:var(–muted);
+background:var(–tag-bg);border:1px solid var(–border);
+border-radius:6px;padding:3px 9px;
+display:flex;align-items:center;gap:3px;
+transition:all .15s;flex-shrink:0;
+}
+.sort-btn:hover{border-color:var(–accent);color:var(–accent)}
+
+/* ============================================================
+エラーボックス
+============================================================ */
+#errorBox{
+display:none;
+background:var(–danger-bg);
+border:1px solid rgba(248,113,113,.3);
+border-radius:var(–radius-sm);
+padding:11px 13px;margin-bottom:10px;
+font-size:.82rem;color:var(–danger);line-height:1.6;
+}
+.error-hd{display:flex;align-items:center;gap:5px;font-weight:700;margin-bottom:2px}
+.error-x{margin-left:auto;color:var(–muted);font-size:.85rem;padding:0 2px}
+
+/* ============================================================
+検索履歴
+============================================================ */
+#historyBar{
+display:none;
+background:var(–card);border:1px solid var(–border);
+border-radius:var(–radius-sm);
+padding:9px 12px;margin-bottom:8px;
+}
+.history-label{font-size:.65rem;color:var(–muted);margin-bottom:6px;font-weight:600}
+.history-chips{display:flex;gap:5px;flex-wrap:wrap}
+.history-chip{
+font-size:.71rem;background:var(–card2);border:1px solid var(–border);
+border-radius:20px;padding:4px 10px;color:var(–text2);
+cursor:pointer;display:inline-flex;align-items:center;gap:4px;
+transition:all .15s;
+}
+.history-chip:hover{border-color:var(–accent);color:var(–accent)}
+.history-chip-x{
+font-size:.6rem;color:var(–muted);
+background:none;border:none;padding:0;cursor:pointer;line-height:1;
+}
+.history-chip-x:hover{color:var(–danger)}
+
+/* ============================================================
+データバー（読込済み）
+============================================================ */
+#dataBar{
+display:none;
+align-items:center;justify-content:space-between;
+background:var(–card);border:1px solid var(–border);
+border-radius:var(–radius-sm);padding:9px 13px;
+margin-bottom:10px;gap:8px;flex-wrap:wrap;
+box-shadow:var(–shadow-card);
+}
+#dataBar.show{display:flex}
+.db-info{font-size:.72rem;color:var(–muted);line-height:1.5;}
+.db-info strong{color:var(–text);font-weight:700}
+.db-info .db-time{font-size:.64rem;color:var(–muted);margin-left:4px}
+.db-btns{display:flex;gap:5px;flex-wrap:wrap}
+
+/* ============================================================
+薬局切替バー
+============================================================ */
+#pharmacyBar{
+display:none;
+background:var(–card);border:1px solid var(–border);
+border-radius:var(–radius-sm);padding:11px 13px;
+margin-bottom:10px;
+}
+#pharmacyBar.show{display:block}
+.pharm-label{font-size:.66rem;color:var(–muted);margin-bottom:8px;font-weight:700;letter-spacing:.05em}
+.pharm-list{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:9px}
+.pharm-chip{
+font-size:.74rem;padding:5px 13px;border-radius:20px;
+border:1.5px solid var(–border);background:var(–tag-bg);color:var(–text2);
+cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:5px;
+}
+.pharm-chip:hover{border-color:var(–accent);color:var(–accent)}
+.pharm-chip.active{background:var(–accent-g);border-color:transparent;color:#fff;font-weight:700}
+.pharm-chip-del{font-size:.6rem;color:rgba(255,255,255,.6);background:none;border:none;cursor:pointer;padding:0;line-height:1;margin-left:2px}
+.pharm-chip-del:hover{color:#fff}
+.pharm-add-row{display:flex;gap:6px;align-items:center}
+.pharm-input{
+flex:1;background:var(–input-bg);border:1.5px solid var(–border);
+border-radius:7px;padding:8px 11px;font-size:.8rem;color:var(–text);
+outline:none;transition:border-color .15s;-webkit-appearance:none;
+}
+.pharm-input:focus{border-color:var(–accent)}
+
+/* ============================================================
+CSVバナー（データなし時）— 中央寄せ・視認性重視
+============================================================ */
+#csvBanner{
+display:none;
+text-align:center;           /* ← テキスト中央寄せ */
+background:var(–card);
+border:1.5px dashed var(–border);
+border-radius:var(–radius);
+padding:40px 24px 36px;      /* 上下に余裕を持たせる */
+margin-bottom:12px;
+box-shadow:var(–shadow-card);
+}
+.banner-icon{font-size:2.8rem;margin-bottom:14px;line-height:1}
+.banner-title{
+font-size:1.05rem;font-weight:800;
+margin-bottom:8px;color:var(–text);
+}
+.banner-sub{
+font-size:.82rem;color:var(–muted);
+margin-bottom:22px;line-height:1.8;
+}
+.banner-btns{
+display:flex;gap:10px;
+justify-content:center;      /* ← ボタンも中央 */
+flex-wrap:wrap;
+}
+
+/* ============================================================
+ボタン
+============================================================ */
+.btn{
+display:inline-flex;align-items:center;justify-content:center;gap:5px;
+border-radius:var(–radius-sm);padding:11px 20px;font-size:.87rem;
+font-weight:700;min-height:44px;border:none;
+transition:opacity .15s,transform .1s,box-shadow .15s;cursor:pointer;
+}
+.btn:active{transform:scale(.97);opacity:.85}
+.btn-primary{
+background:var(–accent-g);color:#fff;
+box-shadow:0 2px 10px rgba(2,132,199,.3);
+min-width:160px;
+}
+.btn-primary:hover{box-shadow:0 4px 16px rgba(2,132,199,.4)}
+.btn-ghost{
+background:var(–tag-bg);color:var(–text2);
+border:1.5px solid var(–border);font-weight:600;
+min-width:140px;
+}
+.btn-ghost:hover{border-color:var(–accent);color:var(–accent)}
+.btn-danger{
+background:var(–danger-bg);color:var(–danger);
+border:1px solid rgba(248,113,113,.25);
+}
+.btn-danger:hover{background:rgba(248,113,113,.18)}
+.xs{
+font-size:.71rem;padding:5px 10px;min-height:28px;
+border-radius:6px;border:1px solid var(–border);
+background:var(–tag-bg);color:var(–text2);
+transition:all .15s;display:inline-flex;align-items:center;gap:3px;
+}
+.xs:hover{border-color:var(–accent);color:var(–accent)}
+.xs.red:hover{border-color:var(–danger);color:var(–danger)}
+.xs.grn{border-color:rgba(74,222,128,.3);color:var(–success)}
+.xs.grn:hover{background:var(–success-bg)}
+
+/* ============================================================
+結果リスト
+============================================================ */
+#resultList{display:flex;flex-direction:column;gap:8px}
+.empty-state{
+text-align:center;padding:60px 20px;color:var(–muted);
+}
+.empty-icon{font-size:2.5rem;margin-bottom:12px}
+.empty-title{font-size:.94rem;font-weight:700;color:var(–text);margin-bottom:7px}
+.empty-sub{font-size:.78rem;line-height:1.75}
+
+/* ============================================================
+薬カード
+============================================================ */
+.drug-card{
+background:var(–card);
+border:1px solid var(–border);
+border-radius:var(–radius);
+padding:14px 16px 13px;
+cursor:pointer;position:relative;overflow:hidden;
+box-shadow:var(–shadow-card);
+transition:border-color .18s,box-shadow .18s,transform .1s;
+outline:none;
+}
+.drug-card::before{
+content:’’;position:absolute;left:0;top:0;bottom:0;width:4px;
+background:var(–accent2);border-radius:var(–radius) 0 0 var(–radius);
+transition:background .18s;
+}
+.drug-card.has-warning::before{background:var(–warn)}
+.drug-card.is-fav::before{background:linear-gradient(#f59e0b,#fbbf24)}
+.drug-card:hover{
+border-color:var(–accent);
+box-shadow:0 4px 18px rgba(56,189,248,.18);
+transform:translateY(-1px);
+}
+.drug-card:active{transform:scale(.985) translateY(0)}
+.drug-card:focus{
+border-color:var(–accent);
+box-shadow:0 0 0 3px rgba(56,189,248,.2);
+}
+.card-top{
+display:flex;align-items:flex-start;
+justify-content:space-between;gap:8px;margin-bottom:5px;
+}
+/* 薬品名 */
+.drug-name{
+font-size:1rem;font-weight:800;line-height:1.35;
+flex:1;word-break:break-all;color:var(–text);
+}
+.drug-name em{
+font-style:normal;background:rgba(56,189,248,.2);
+color:var(–accent);border-radius:3px;padding:0 2px;
+}
+/* 棚番号＋お気に入りを縦に並べるコンテナ */
+.card-right{
+display:flex;
+flex-direction:column;
+align-items:flex-end;
+gap:5px;
+flex-shrink:0;
+}
+/* 棚番号バッジ */
+.shelf-badge{
+flex-shrink:0;background:var(–accent-g);color:#fff;
+font-size:.75rem;font-weight:800;
+padding:4px 10px;border-radius:8px;
+letter-spacing:.04em;white-space:nowrap;
+box-shadow:0 1px 4px rgba(2,132,199,.3);
+font-family:“SFMono-Regular”,“Consolas”,monospace;
+}
+/* 一般名 */
+.generic-name{font-size:.73rem;color:var(–text2);margin-bottom:5px;}
+/* チップ */
+.card-meta{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:3px}
+.chip{
+font-size:.68rem;background:var(–tag-bg);
+border:1px solid var(–border2);border-radius:5px;
+padding:2px 8px;color:var(–muted);white-space:nowrap;
+}
+.chip.maker{color:#7dd3fc;border-color:#164e63;background:#082030;font-weight:600}
+.chip.spec {color:#86efac;border-color:#14532d;background:#052014;font-weight:600}
+.chip.form {color:#c4b5fd;border-color:#4c1d95;background:#1a0a38;font-weight:600}
+.chip.gg  {color:var(–warn);border-color:#7c2d12;background:#1c0800;font-weight:800}
+.chip.brand{color:#fcd34d;border-color:#78350f;background:#1c0f00;font-weight:800}
+/* 警告行 */
+.warn-row{
+display:flex;align-items:flex-start;gap:5px;
+font-size:.69rem;color:var(–warn);
+background:var(–warn-bg);border:1px solid rgba(251,146,60,.22);
+border-radius:6px;padding:5px 9px;margin-top:4px;line-height:1.55;
+}
+/* カード内ボタン */
+/* fav-btn: card-right 内のインライン配置（絶対配置なし・重なり解消）*/
+.fav-btn{
+background:none;border:none;
+font-size:.95rem;line-height:1;padding:3px 5px;
+color:var(–muted);opacity:0;cursor:pointer;
+border-radius:6px;
+transition:opacity .15s,color .15s,transform .15s;
+display:block;width:100%;text-align:center;
+}
+/* ホバー時・フォーカス時に表示 */
+.drug-card:hover .fav-btn,
+.drug-card:focus .fav-btn{ opacity:.7; }
+/* お気に入り登録済み → 常時表示 */
+.fav-btn.starred{ color:#f59e0b; opacity:1; }
+.fav-btn.starred:hover{ transform:scale(1.2); opacity:1; }
+.drug-card:hover .fav-btn,
+.drug-card:focus
+.fav-btn.starred{
+color:#f59e0b;
+opacity:1;
+}
+.fav-btn.starred:hover{ transform:scale(1.2); }
+/* card-edit-btn: 右下に絶対配置 */
+.card-edit-btn{
+position:absolute;bottom:9px;right:12px;
+background:var(–card2);border:1px solid var(–border);
+border-radius:6px;padding:3px 9px;font-size:.64rem;color:var(–muted);
+opacity:0;transition:opacity .15s;z-index:2;
+}
+.drug-card:hover .card-edit-btn,.drug-card:focus .card-edit-btn{opacity:1}
+
+/* ============================================================
+詳細モーダル
+============================================================ */
+.overlay{
+display:none;position:fixed;inset:0;z-index:300;
+background:var(–overlay);
+backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+}
+.overlay.show{display:flex;align-items:flex-end}
+.sheet{
+background:var(–surface);
+border-radius:20px 20px 0 0;
+border-top:2px solid var(–border);
+width:100%;max-height:92vh;
+overflow-y:auto;-webkit-overflow-scrolling:touch;
+padding-bottom:env(safe-area-inset-bottom,16px);
+animation:slideUp .22s cubic-bezier(.4,0,.2,1);
+}
+@keyframes slideUp{from{transform:translateY(100%);opacity:.6}to{transform:translateY(0);opacity:1}}
+.sheet-handle{
+width:40px;height:4px;background:var(–border);
+border-radius:2px;margin:12px auto 0;
+}
+.sheet-header{
+padding:14px 16px 12px;border-bottom:1px solid var(–border);
+display:flex;align-items:flex-start;gap:8px;justify-content:space-between;
+position:sticky;top:0;background:var(–surface);z-index:5;
+}
+.sheet-title{font-size:1.1rem;font-weight:900;line-height:1.35;word-break:break-all;flex:1;color:var(–text)}
+.sheet-header-actions{display:flex;gap:6px;flex-shrink:0}
+.icon-round{
+width:32px;height:32px;border-radius:50%;
+border:1px solid var(–border);
+display:flex;align-items:center;justify-content:center;
+font-size:.85rem;background:var(–card2);color:var(–muted);
+transition:all .15s;
+}
+.icon-round:hover{background:var(–border);color:var(–text)}
+.icon-round.accent{background:rgba(56,189,248,.1);border-color:rgba(56,189,248,.3);color:var(–accent)}
+.icon-round.accent:hover{background:rgba(56,189,248,.2)}
+.sheet-body{padding:14px 16px}
+
+/* 棚番号ヒーロー */
+.shelf-hero{
+background:var(–accent-g);
+border-radius:var(–radius);padding:16px 18px;
+margin-bottom:14px;display:flex;align-items:center;gap:13px;
+box-shadow:0 3px 12px rgba(2,132,199,.25);
+}
+.shelf-hero-icon{font-size:1.7rem;flex-shrink:0;line-height:1}
+.shelf-hero-label{font-size:.62rem;opacity:.8;letter-spacing:.1em;color:#fff;text-transform:uppercase}
+.shelf-hero-num{
+font-family:“SFMono-Regular”,“Consolas”,monospace;
+font-size:2rem;font-weight:900;line-height:1;color:#fff;
+}
+.shelf-hero-sub{font-size:.82rem;opacity:.88;margin-top:3px;color:#fff}
+
+/* 警告ブロック */
+.warn-block{
+background:var(–warn-bg);border:1.5px solid rgba(251,146,60,.3);
+border-radius:var(–radius-sm);padding:11px 13px;
+margin-bottom:14px;display:flex;gap:10px;align-items:flex-start;
+}
+.warn-block-ico{font-size:1rem;flex-shrink:0;line-height:1.4}
+.warn-block-body{font-size:.83rem;color:var(–warn);line-height:1.6}
+.warn-block-title{font-weight:800;margin-bottom:2px}
+
+/* 詳細グリッド */
+.detail-sec{margin-bottom:14px}
+.detail-sec-title{
+font-size:.63rem;font-weight:700;letter-spacing:.12em;
+text-transform:uppercase;color:var(–muted);margin-bottom:7px;
+font-family:“SFMono-Regular”,“Consolas”,monospace;
+}
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.ditem{background:var(–card2);border:1px solid var(–border2);border-radius:9px;padding:9px 12px}
+.ditem.full{grid-column:1/-1}
+.dlabel{font-size:.63rem;color:var(–muted);margin-bottom:3px;font-family:“SFMono-Regular”,“Consolas”,monospace}
+.dvalue{font-size:.9rem;font-weight:600;word-break:break-all;line-height:1.4;color:var(–text)}
+
+/* 保存区分タグ */
+.stags{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}
+.stag{font-size:.68rem;font-weight:700;padding:3px 10px;border-radius:20px}
+.stag.cold{color:#38bdf8;border:1px solid #164e63;background:#072030}
+.stag.dark{color:#c084fc;border:1px solid #4c1d95;background:#12072a}
+.stag.narco{color:var(–danger);border:1px solid #7f1d1d;background:#1c0606;font-weight:900;letter-spacing:.05em}
+.stag.other{color:var(–text2);border:1px solid var(–border);background:var(–tag-bg)}
+
+/* 棚写真 */
+.shelf-photo{
+width:100%;border-radius:var(–radius-sm);
+object-fit:cover;max-height:200px;
+border:1px solid var(–border);
+margin-bottom:14px;cursor:pointer;
+transition:opacity .15s;
+}
+.shelf-photo:hover{opacity:.9}
+.shelf-photo-full{
+display:none;position:fixed;inset:0;z-index:500;
+background:rgba(0,0,0,.96);
+align-items:center;justify-content:center;cursor:pointer;
+}
+.shelf-photo-full.show{display:flex}
+.shelf-photo-full img{max-width:95vw;max-height:90vh;border-radius:8px;object-fit:contain}
+
+/* ============================================================
+編集フォーム
+============================================================ */
+.edit-header{
+position:sticky;top:0;z-index:10;
+background:var(–surface);border-bottom:1px solid var(–border);
+padding:12px 16px;
+display:flex;align-items:center;justify-content:space-between;gap:8px;
+}
+.edit-header-title{font-size:.96rem;font-weight:800;color:var(–text)}
+.edit-header-actions{display:flex;gap:6px}
+.edit-body{padding:14px 16px}
+.fsec{
+font-size:.65rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;
+color:var(–accent);margin:16px 0 10px;
+display:flex;align-items:center;gap:6px;
+}
+.fsec::after{content:’’;flex:1;height:1px;background:var(–border)}
+.fgroup{margin-bottom:12px}
+.flabel{
+display:block;font-size:.68rem;font-weight:700;color:var(–muted);
+margin-bottom:5px;letter-spacing:.04em;
+}
+.flabel .req{color:var(–accent);margin-left:2px;font-size:.6rem}
+.flabel .hint{font-weight:400;color:var(–muted);font-size:.6rem;margin-left:4px}
+.finput,.fselect,.ftextarea{
+width:100%;background:var(–input-bg);
+border:1.5px solid var(–border);border-radius:var(–radius-sm);
+padding:10px 12px;font-size:.88rem;color:var(–text);
+outline:none;transition:border-color .15s,box-shadow .15s;
+-webkit-appearance:none;
+}
+.finput:focus,.fselect:focus,.ftextarea:focus{
+border-color:var(–accent);
+box-shadow:0 0 0 3px rgba(56,189,248,.12);
+}
+.ftextarea{resize:vertical;min-height:70px;line-height:1.55}
+.fselect{
+background-image:url(“data:image/svg+xml,%3Csvg xmlns=‘http://www.w3.org/2000/svg’ width=‘10’ height=‘6’ viewBox=‘0 0 10 6’%3E%3Cpath d=‘M1 1l4 4 4-4’ stroke=’%2364748b’ stroke-width=‘1.5’ fill=‘none’ stroke-linecap=‘round’/%3E%3C/svg%3E”);
+background-repeat:no-repeat;background-position:right 12px center;
+padding-right:30px;
+}
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.fgrid .fgroup{margin-bottom:0}
+.delete-zone{
+margin-top:22px;padding:14px;
+background:var(–danger-bg);border:1px dashed rgba(248,113,113,.3);
+border-radius:var(–radius-sm);text-align:center;
+}
+.delete-zone p{font-size:.76rem;color:var(–muted);margin-bottom:10px;line-height:1.6}
+
+/* ============================================================
+フッター
+============================================================ */
+footer{
+position:fixed;bottom:0;left:0;right:0;
+background:var(–surface);
+border-top:1px solid var(–border);
+padding:8px 16px max(8px,env(safe-area-inset-bottom));
+display:flex;justify-content:space-between;align-items:center;gap:8px;
+backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+box-shadow:0 -2px 12px rgba(0,0,0,.1);
+z-index:100;
+}
+.footer-left{display:flex;align-items:center;gap:8px}
+.footer-count{
+font-size:.72rem;color:var(–muted);
+font-family:“SFMono-Regular”,“Consolas”,monospace;
+}
+.footer-right{display:flex;gap:7px}
+.fbtn{
+display:flex;align-items:center;gap:4px;
+font-size:.77rem;font-weight:600;
+background:var(–tag-bg);border:1px solid var(–border);color:var(–text2);
+border-radius:var(–radius-sm);padding:7px 13px;min-height:36px;
+transition:all .15s;white-space:nowrap;
+}
+.fbtn:hover{border-color:var(–accent);color:var(–accent)}
+.fbtn.primary{
+background:var(–accent-g);border-color:transparent;
+color:#fff;font-weight:700;
+box-shadow:0 2px 8px rgba(2,132,199,.3);
+}
+.fbtn.primary:hover{box-shadow:0 4px 12px rgba(2,132,199,.4);opacity:.95}
+
+/* ============================================================
+スクロールトップ
+============================================================ */
+#scrollTop{
+position:fixed;right:16px;bottom:60px;
+width:40px;height:40px;border-radius:50%;
+background:var(–accent-g);color:#fff;
+font-size:.95rem;display:none;align-items:center;justify-content:center;
+box-shadow:0 3px 12px rgba(2,132,199,.4);
+border:none;z-index:150;
+transition:opacity .2s,transform .2s;
+}
+#scrollTop.show{display:flex}
+#scrollTop:hover{transform:scale(1.08)}
+
+/* ============================================================
+トースト
+============================================================ */
+#toast{
+position:fixed;bottom:70px;left:50%;transform:translateX(-50%) translateY(10px);
+background:var(–card);border:1px solid var(–border);
+border-radius:var(–radius-sm);padding:10px 18px;
+font-size:.81rem;color:var(–text);font-weight:600;
+box-shadow:var(–shadow);
+opacity:0;pointer-events:none;
+transition:opacity .2s,transform .2s;
+white-space:nowrap;z-index:500;
+display:flex;align-items:center;gap:7px;
+}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ============================================================
+QRスキャン
+============================================================ */
+#qrModal{
+display:none;position:fixed;inset:0;z-index:400;
+background:rgba(0,0,0,.92);align-items:center;justify-content:center;
+}
+#qrModal.show{display:flex}
+.qr-sheet{
+background:var(–surface);border-radius:20px;
+padding:22px 20px;width:calc(100% - 32px);max-width:360px;text-align:center;
+}
+.qr-title{font-size:.96rem;font-weight:800;margin-bottom:4px;color:var(–text)}
+.qr-sub{font-size:.75rem;color:var(–muted);margin-bottom:14px;line-height:1.55}
+#qrVideo{width:100%;border-radius:12px;background:#000;aspect-ratio:1;object-fit:cover}
+.qr-scan-frame{position:relative;display:inline-block;width:100%;margin-bottom:14px}
+.qr-scan-line{
+position:absolute;top:0;left:0;right:0;height:2px;
+background:var(–accent);animation:qrScan 2s linear infinite;
+border-radius:1px;box-shadow:0 0 8px var(–accent);
+}
+@keyframes qrScan{0%{top:5%}50%{top:95%}100%{top:5%}}
+.qr-result{font-size:.8rem;color:var(–muted);margin-bottom:12px;min-height:20px}
+.qr-result.found{color:var(–success);font-weight:700}
+.qr-result.notfound{color:var(–warn)}
+#qrCanvas{display:none}
+#qrManual{display:none;gap:8px;margin-bottom:12px}
+#qrManualInput{
+flex:1;background:var(–input-bg);border:1.5px solid var(–border);
+border-radius:8px;padding:10px 12px;font-size:.88rem;color:var(–text);outline:none;
+}
+
+/* ============================================================
+ライトモード 上書き
+============================================================ */
+[data-theme=“light”] body{background:#c8d3e8 !important;}
+[data-theme=“light”] header{background:#1a4570 !important;border-bottom-color:#0e3560 !important;box-shadow:0 2px 12px rgba(0,0,0,.25);}
+[data-theme=“light”] .logo-pill{background:rgba(255,255,255,.18);color:#fff;border:1px solid rgba(255,255,255,.25);}
+[data-theme=“light”] #searchInput{background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.35);color:#fff;}
+[data-theme=“light”] #searchInput::placeholder{color:rgba(255,255,255,.6)}
+[data-theme=“light”] .search-icon,[data-theme=“light”] .search-icon-btn{color:rgba(255,255,255,.7)}
+[data-theme=“light”] .search-icon-btn:hover{color:#fff;background:rgba(255,255,255,.15)}
+[data-theme=“light”] .hbtn{background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.3);color:#fff;}
+[data-theme=“light”] .hbtn:hover{background:rgba(255,255,255,.28);border-color:rgba(255,255,255,.55)}
+[data-theme=“light”] .ftab{background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.3);color:rgba(255,255,255,.85);}
+[data-theme=“light”] .ftab:hover{background:rgba(255,255,255,.28);border-color:rgba(255,255,255,.55);color:#fff;}
+[data-theme=“light”] .ftab.active{background:#fff;border-color:transparent;color:#075985;box-shadow:0 2px 8px rgba(0,0,0,.2);}
+[data-theme=“light”] .ftab[data-filter=“warning”].active,[data-theme=“light”] .ftab[data-filter=“fav”].active{background:#fff;color:#9a3412;}
+[data-theme=“light”] footer{background:rgba(255,255,255,.96);border-top:1px solid #b0bcd8;box-shadow:0 -3px 16px rgba(0,0,0,.10);}
+[data-theme=“light”] .drug-card{box-shadow:0 2px 12px rgba(0,0,0,.10),0 0 0 1px rgba(0,0,0,.04);}
+[data-theme=“light”] .drug-card:hover{border-color:#0ea5e9;box-shadow:0 6px 20px rgba(0,0,0,.13),0 0 0 1px #0ea5e9;transform:translateY(-2px);}
+[data-theme=“light”] .drug-name{color:#06080f;font-weight:900}
+[data-theme=“light”] .generic-name{color:#334155}
+[data-theme=“light”] .chip.maker{color:#075985;border-color:#bae6fd;background:#e0f5ff;font-weight:700}
+[data-theme=“light”] .chip.spec{color:#14532d;border-color:#bbf7d0;background:#dcfce7;font-weight:700}
+[data-theme=“light”] .chip.form{color:#4c1d95;border-color:#ddd6fe;background:#ede9fe;font-weight:700}
+[data-theme=“light”] .chip.gg{color:#9a3412;border-color:#fed7aa;background:#fff7ed;font-weight:800}
+[data-theme=“light”] .chip.brand{color:#713f12;border-color:#fde68a;background:#fffbeb;font-weight:800}
+[data-theme=“light”] .warn-row{color:#92400e;background:rgba(194,65,12,.07)}
+[data-theme=“light”] .shelf-badge{background:linear-gradient(135deg,#075985,#0ea5e9)}
+[data-theme=“light”] #csvBanner{background:#fff;border-color:#b0bcd8;box-shadow:0 2px 12px rgba(0,0,0,.10);}
+[data-theme=“light”] .banner-title{color:#0f172a}
+[data-theme=“light”] #dataBar{background:#fff;border-color:#b0bcd8;box-shadow:0 2px 8px rgba(0,0,0,.08);}
+[data-theme=“light”] #pharmacyBar{background:#fff;border-color:#b0bcd8;}
+[data-theme=“light”] #historyBar{background:#fff;border-color:#b0bcd8;}
+[data-theme=“light”] .status-bar{background:rgba(255,255,255,.65);border-radius:10px;padding:4px 10px;border:1px solid rgba(176,188,216,.6);margin-bottom:8px;}
+[data-theme=“light”] .finput,[data-theme=“light”] .fselect,[data-theme=“light”] .ftextarea{color:#0f172a}
+[data-theme=“light”] .dvalue{color:#0f172a}
+[data-theme=“light”] .stag.cold{color:#0369a1;border-color:#bae6fd;background:#e0f5ff}
+[data-theme=“light”] .stag.dark{color:#7c3aed;border-color:#ddd6fe;background:#f5f3ff}
+[data-theme=“light”] .stag.narco{color:#b91c1c;border-color:#fecaca;background:#fef2f2}
+
+/* ============================================================
+印刷
+============================================================ */
+@media print{
+header,footer,#scrollTop,#toast,#editModal,#modal,#qrModal,.shelf-photo-full{display:none!important}
+body{background:#fff!important;color:#000!important}
+main{padding:0!important;max-width:none!important}
+.drug-card{break-inside:avoid;border:1px solid #ccc!important;border-radius:4px!important;box-shadow:none!important;margin-bottom:6px;padding:8px 10px;}
+.drug-card::before,.fav-btn,.card-edit-btn{display:none!important}
+.drug-name{font-size:.85rem!important;color:#000!important}
+.shelf-badge{background:#000!important;color:#fff!important;font-size:.7rem;padding:2px 6px}
+.chip{border:1px solid #ccc!important;background:#f5f5f5!important;color:#333!important}
+.warn-row{color:#c05000!important;background:#fff8f0!important}
+#statusBar,#dataBar,#historyBar,#errorBox,#csvBanner,#pharmacyBar{display:none!important}
+}
+
+/* ============================================================
+スクロールバー
+============================================================ */
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(–border);border-radius:2px}
+
+/* ============================================================
+デスクトップ
+============================================================ */
+@media(min-width:640px){
+header{padding:11px 24px 0}
+main{padding:14px 24px 100px}
+footer{max-width:720px;left:50%;transform:translateX(-50%);border-radius:14px 14px 0 0;right:auto;width:100%;}
+.overlay.show{align-items:center;justify-content:center}
+.sheet{border-radius:20px;max-width:560px;margin:0 auto;max-height:88vh}
+#scrollTop{right:calc(50% - 380px + 14px)}
+}
+@media(max-width:380px){
+.fgrid{grid-template-columns:1fr}
+}
+
+</style>
+</head>
+<body>
+
+<!-- ヘッダー -->
+
+<header>
+  <div class="header-row1">
+    <div class="logo">
+      <div class="logo-pill">💊 薬局SEARCH <span style="font-size:.55rem;opacity:.7;">v4.1</span></div>
+    </div>
+
+```
+<div class="search-wrap">
+  <span class="search-icon">🔍</span>
+  <input type="search" id="searchInput"
+    placeholder="薬品名・棚番号・一般名…"
+    autocomplete="off" autocorrect="off" autocapitalize="off"
+    spellcheck="false" inputmode="search" aria-label="薬品を検索">
+  <div class="search-actions">
+    <button class="search-icon-btn clear-btn" id="clearBtn" aria-label="クリア">✕</button>
+    <button class="search-icon-btn" id="voiceBtn" aria-label="音声入力" title="音声入力">🎤</button>
+  </div>
+</div>
+
+<div class="header-btns">
+  <button class="hbtn" id="pharmBtn" title="薬局切替" aria-label="薬局切替">🏥</button>
+  <button class="hbtn" id="qrBtn" title="QRスキャン" aria-label="QRスキャン">📷</button>
+  <button class="hbtn" id="themeBtn" title="ライト/ダーク切替" aria-label="テーマ切替">🌙</button>
+  <button class="hbtn" id="csvIconBtn" title="CSVを読み込む" aria-label="CSV読込">📄</button>
+</div>
+```
+
+  </div>
+
+  <!-- フィルタータブ（SVGアイコン） -->
+
+  <div class="filter-tabs" id="filterTabs" role="tablist">
+    <!-- すべて：グリッド -->
+    <button class="ftab active" data-filter="all" role="tab">
+      <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="1" y="1" width="5.5" height="5.5" rx="1.2"/><rect x="9.5" y="1" width="5.5" height="5.5" rx="1.2"/>
+        <rect x="1" y="9.5" width="5.5" height="5.5" rx="1.2"/><rect x="9.5" y="9.5" width="5.5" height="5.5" rx="1.2"/>
+      </svg>
+      すべて
+    </button>
+    <!-- 錠剤：丸い錠剤 -->
+    <button class="ftab" data-filter="tablet" role="tab">
+      <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+        <ellipse cx="8" cy="8" rx="5.5" ry="3.5" transform="rotate(-35 8 8)"/>
+        <line x1="4.1" y1="11.9" x2="11.9" y2="4.1"/>
+      </svg>
+      錠剤
+    </button>
+    <!-- 液剤：フラスコ -->
+    <button class="ftab" data-filter="liquid" role="tab">
+      <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M6 2h4M5.5 2v4.5L2.5 12a1.5 1.5 0 001.4 2h8.2a1.5 1.5 0 001.4-2L10.5 6.5V2"/>
+        <line x1="3.5" y1="10" x2="12.5" y2="10"/>
+      </svg>
+      液剤
+    </button>
+    <!-- 散剤：粒 -->
+    <button class="ftab" data-filter="powder" role="tab">
+      <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor">
+        <circle cx="4" cy="5" r="1.5"/><circle cx="8" cy="3.5" r="1.2"/>
+        <circle cx="12" cy="5" r="1.5"/><circle cx="3" cy="9" r="1.3"/>
+        <circle cx="8" cy="8" r="1.8"/><circle cx="13" cy="9" r="1.3"/>
+        <circle cx="5.5" cy="12.5" r="1.2"/><circle cx="10.5" cy="12.5" r="1.2"/>
+      </svg>
+      散剤
+    </button>
+    <!-- 外用：塗る手 -->
+    <button class="ftab" data-filter="external" role="tab">
+      <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M2 11.5c1-1.5 2.5-2 4.5-2h3c1.5 0 2.5.5 3.5 1.5"/>
+        <path d="M6 9.5V4a1 1 0 012 0v3.5M8 7.5V3a1 1 0 012 0v4.5M10 7V4.5a1 1 0 012 0V9"/>
+        <path d="M4 7.5V6a1 1 0 012 0v3.5"/>
+      </svg>
+      外用
+    </button>
+    <!-- 注射：シリンジ -->
+    <button class="ftab" data-filter="injection" role="tab">
+      <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="14" y1="2" x2="10" y2="6"/>
+        <path d="M10 6L5.5 10.5a1.5 1.5 0 01-2.1 0l-1-1a1.5 1.5 0 010-2.1L7 3"/>
+        <line x1="7" y1="3" x2="10" y2="6"/>
+        <line x1="2" y1="14" x2="4.5" y2="11.5"/>
+        <line x1="6" y1="6" x2="9" y2="9"/>
+      </svg>
+      注射
+    </button>
+    <!-- 要注意：シールド感嘆符 -->
+    <button class="ftab" data-filter="fav" role="tab">⭐ お気に入り</button>
+    <button class="ftab" data-filter="warning" role="tab">
+      <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M8 1.5L2 4v4.5c0 3 2.5 5.5 6 6 3.5-.5 6-3 6-6V4L8 1.5z"/>
+        <line x1="8" y1="6" x2="8" y2="9"/><circle cx="8" cy="11" r=".7" fill="currentColor" stroke="none"/>
+      </svg>
+      要注意
+    </button>
+  </div>
+</header>
+
+<main>
+  <!-- ステータスバー -->
+  <div class="status-bar">
+    <div class="status-left">
+      <div class="status-dot" id="statusDot"></div>
+      <span id="statusText">読み込み中...</span>
+      <span class="count-badge" id="countBadge"></span>
+    </div>
+    <button class="sort-btn" id="sortBtn" title="並び替え">⇅ <span id="sortLabel">標準</span></button>
+  </div>
+
+  <!-- 検索履歴 -->
+
+  <div id="historyBar">
+    <div class="history-label">🕐 最近の検索</div>
+    <div class="history-chips" id="historyChips"></div>
+  </div>
+
+  <!-- エラーボックス -->
+
+  <div id="errorBox" role="alert">
+    <div class="error-hd">
+      <span>⚠️</span><span id="errorTitle">エラー</span>
+      <button class="error-x" onclick="hideError()">✕</button>
+    </div>
+    <div id="errorBody"></div>
+  </div>
+
+  <!-- データなし時バナー -->
+
+  <div id="csvBanner" style="display:none">
+    <div class="banner-icon">📋</div>
+    <div class="banner-title">薬品データを登録しましょう</div>
+    <div class="banner-sub">
+      CSVファイルを読み込むか、<br>直接薬品を追加して始められます。
+    </div>
+    <div class="banner-btns">
+      <button class="btn btn-primary" onclick="triggerFile()">📄 CSVを読み込む</button>
+      <button class="btn btn-ghost" onclick="openEdit(null)">＋ 薬品を追加</button>
+    </div>
+  </div>
+
+  <!-- 薬局切替バー -->
+
+  <div id="pharmacyBar">
+    <div class="pharm-label">🏥 薬局を切り替え</div>
+    <div class="pharm-list" id="pharmList"></div>
+    <div class="pharm-add-row">
+      <input class="pharm-input" id="pharmNameInput" type="text" placeholder="薬局名を入力（例：本店・分店）" maxlength="20">
+      <button class="xs" onclick="addPharmacy()">＋ 追加</button>
+    </div>
+  </div>
+
+  <!-- データバー -->
+
+  <div id="dataBar">
+    <div class="db-info" id="dbInfo">読込済み</div>
+    <div class="db-btns">
+      <button class="xs" onclick="triggerFile()">📄 CSV更新</button>
+      <button class="xs grn" onclick="exportCSV()">⬇ 書出</button>
+      <button class="xs" onclick="window.print()">🖨 印刷</button>
+      <button class="xs red" onclick="confirmClear()">✕ クリア</button>
+    </div>
+  </div>
+
+  <!-- 結果リスト -->
+
+  <div id="resultList"></div>
+</main>
+
+<!-- フッター -->
+
+<footer>
+  <div class="footer-left">
+    <span class="footer-count" id="footerCount">— 件</span>
+  </div>
+  <div class="footer-right">
+    <button class="fbtn" onclick="triggerFile()">📄 CSV</button>
+    <button class="fbtn primary" onclick="openEdit(null)">＋ 薬品を追加</button>
+  </div>
+</footer>
+
+<!-- スクロールトップ -->
+
+<button id="scrollTop" aria-label="ページトップへ">↑</button>
+
+<!-- トースト -->
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<!-- ============================================================
+     詳細モーダル
+     ============================================================ -->
+
+<div id="modal" class="overlay" role="dialog" aria-modal="true">
+  <div class="sheet" id="modalSheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+      <div class="sheet-title" id="modalTitle">—</div>
+      <div class="sheet-header-actions">
+        <button class="icon-round" id="modalFavBtn" title="お気に入り" onclick="toggleFavFromModal()">☆</button>
+      <button class="icon-round accent" id="modalEditBtn" title="編集">✏️</button>
+      <button class="icon-round" id="modalClose" aria-label="閉じる">✕</button>
+      </div>
+    </div>
+    <div class="sheet-body" id="modalBody"></div>
+  </div>
+</div>
+
+<!-- ============================================================
+     編集モーダル
+     ============================================================ -->
+
+<div id="editModal" class="overlay" role="dialog" aria-modal="true">
+  <div class="sheet" id="editSheet">
+
+```
+<div class="edit-header">
+  <div class="edit-header-title" id="editTitle">薬品を追加</div>
+  <div class="edit-header-actions">
+    <button class="xs" onclick="closeEdit()">キャンセル</button>
+    <button class="xs grn" onclick="saveEdit()">💾 保存</button>
+  </div>
+</div>
+
+<div class="edit-body">
+
+  <div class="fsec">📋 基本情報</div>
+
+  <div class="fgroup">
+    <label class="flabel" for="ef_name">薬品名<span class="req">●</span></label>
+    <input class="finput" id="ef_name" type="text" placeholder="例：アムロジピン錠5mg「サワイ」">
+  </div>
+  <div class="fgroup">
+    <label class="flabel" for="ef_generic">一般名<span class="hint">（成分名）</span></label>
+    <input class="finput" id="ef_generic" type="text" placeholder="例：アムロジピンベシル酸塩">
+  </div>
+  <div class="fgrid">
+    <div class="fgroup">
+      <label class="flabel" for="ef_spec">規格</label>
+      <input class="finput" id="ef_spec" type="text" placeholder="例：5mg">
+    </div>
+    <div class="fgroup">
+      <label class="flabel" for="ef_form">剤形</label>
+      <select class="fselect" id="ef_form">
+        <option value="">-- 選択 --</option>
+        <option>錠剤</option><option>OD錠</option><option>カプセル</option>
+        <option>散剤</option><option>顆粒</option><option>DS</option>
+        <option>液剤</option><option>内用液</option><option>シロップ</option>
+        <option>点眼液</option><option>点鼻液</option>
+        <option>軟膏</option><option>クリーム</option><option>ゲル</option>
+        <option>テープ</option><option>パップ</option><option>スプレー</option>
+        <option>注射</option><option>点滴</option><option>その他</option>
+      </select>
+    </div>
+  </div>
+  <div class="fgrid">
+    <div class="fgroup">
+      <label class="flabel" for="ef_maker">メーカー</label>
+      <input class="finput" id="ef_maker" type="text" placeholder="例：沢井製薬">
+    </div>
+    <div class="fgroup">
+      <label class="flabel" for="ef_brand">先発 / 後発</label>
+      <select class="fselect" id="ef_brand">
+        <option value="">--</option>
+        <option>先発</option><option>後発</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="fsec">📦 棚・配置</div>
+
+  <div class="fgrid">
+    <div class="fgroup">
+      <label class="flabel" for="ef_shelf">棚番号<span class="hint">（例：A-1-3）</span></label>
+      <input class="finput" id="ef_shelf" type="text" placeholder="A-1-3">
+    </div>
+    <div class="fgroup">
+      <label class="flabel" for="ef_shelfdetail">詳細位置</label>
+      <input class="finput" id="ef_shelfdetail" type="text" placeholder="A棚 1段目 左3">
+    </div>
+  </div>
+
+  <div class="fsec">🔖 管理情報</div>
+
+  <div class="fgrid">
+    <div class="fgroup">
+      <label class="flabel" for="ef_storage">保存区分</label>
+      <select class="fselect" id="ef_storage">
+        <option value="">--</option>
+        <option>常温保存</option><option>冷所保存</option>
+        <option>遮光</option><option>冷所保存・遮光</option>
+        <option>麻薬</option><option>向精神薬</option>
+      </select>
+    </div>
+    <div class="fgroup">
+      <label class="flabel" for="ef_adoption">採用区分</label>
+      <select class="fselect" id="ef_adoption">
+        <option value="">--</option>
+        <option>採用</option><option>採用外</option><option>削除予定</option>
+      </select>
+    </div>
+  </div>
+  <div class="fgroup">
+    <label class="flabel" for="ef_supplier">発注先</label>
+    <input class="finput" id="ef_supplier" type="text" placeholder="例：スズケン">
+  </div>
+
+  <div class="fsec">⚠️ 注意・検索</div>
+
+  <div class="fgroup">
+    <label class="flabel" for="ef_warning">類似薬注意<span class="hint">（入力するとカードに⚠️表示）</span></label>
+    <input class="finput" id="ef_warning" type="text" placeholder="例：アルマールとアマリールを絶対に間違えないこと">
+  </div>
+  <div class="fgroup">
+    <label class="flabel" for="ef_alias">名称ゆれ<span class="hint">（別表記・通称）</span></label>
+    <input class="finput" id="ef_alias" type="text" placeholder="例：カロナール / アセトアミノフェン">
+  </div>
+  <div class="fgroup">
+    <label class="flabel" for="ef_search">検索用別名<span class="hint">（先発品名・略称）</span></label>
+    <input class="finput" id="ef_search" type="text" placeholder="例：ノルバスク アムロジン">
+  </div>
+  <div class="fgroup">
+    <label class="flabel" for="ef_note">備考</label>
+    <textarea class="ftextarea" id="ef_note" placeholder="例：食後服用。腎機能に応じて減量。"></textarea>
+  </div>
+
+  <!-- 削除ゾーン（編集時のみ） -->
+  <div class="delete-zone" id="deleteZone" style="display:none">
+    <p>この薬品を完全に削除します。<br>この操作は元に戻せません。</p>
+    <button class="btn btn-danger" onclick="deleteDrug()">🗑️ 削除する</button>
+  </div>
+
+</div>
+```
+
+  </div>
+</div>
+
+<!-- QRスキャンモーダル -->
+
+<div id="qrModal">
+  <div class="qr-sheet">
+    <div class="qr-title">📷 QRコードをスキャン</div>
+    <div class="qr-sub">棚に貼ったQRコードをカメラに向けてください。<br>棚番号が読み取られ、即座に検索します。</div>
+    <div class="qr-scan-frame">
+      <video id="qrVideo" playsinline autoplay muted></video>
+      <div class="qr-scan-line"></div>
+    </div>
+    <canvas id="qrCanvas"></canvas>
+    <div class="qr-result" id="qrResult">スキャン待機中...</div>
+    <!-- 非対応ブラウザ用：手動入力フォールバック -->
+    <div id="qrManual" style="display:none;gap:8px;margin-bottom:12px;">
+      <input id="qrManualInput" type="text" placeholder="棚番号や薬品名を入力"
+        style="flex:1;background:var(--input-bg);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-size:.88rem;color:var(--text);outline:none;">
+      <button class="btn btn-primary" style="padding:9px 16px;min-height:0" onclick="qrManualSearch()">検索</button>
+    </div>
+    <button class="btn btn-ghost" style="width:100%" onclick="closeQR()">キャンセル</button>
+  </div>
+</div>
+
+<!-- 棚写真フルスクリーン -->
+
+<div class="shelf-photo-full" id="photoFull" onclick="closePhotoFull()">
+  <img id="photoFullImg" src="" alt="棚写真">
+</div>
+
+<!-- ファイル入力 -->
+
+<input type="file" id="csvFileInput" accept=".csv,text/csv" style="display:none" aria-hidden="true">
+
+<!-- ============================================================
+     JavaScript
+     ============================================================ -->
+
+<script>
+
+'use strict';
+
+/* ---- 定数 ---- */
+var LS_DATA    = 'yaku_data_v4';
+var LS_META    = 'yaku_meta_v4';
+var LS_THEME   = 'yaku_theme';
+var LS_HISTORY = 'yaku_history';
+var LS_FAV     = 'yaku_fav';
+var LS_PHARMACY= 'yaku_pharmacy';
+
+var FILTER_KW = {
+  all: null,
+  tablet:   ['錠','OD錠','カプセル','cap'],
+  liquid:   ['液','シロップ','点眼','点鼻','内用液'],
+  powder:   ['散','顆粒','DS','ドライシロップ'],
+  external: ['軟膏','クリーム','テープ','パップ','ゲル','スプレー','貼付'],
+  injection:['注射','注','点滴','静注','筋注'],
+  warning:  '__warn__',
+  fav:      '__fav__'
+};
+var FIELDS = ['薬品名','一般名','規格','剤形','メーカー','棚番号','棚の詳細位置',
+              '先発/後発','採用区分','備考','類似薬注意','名称ゆれ','検索用別名',
+              '保存区分','発注先','棚写真URL'];
+var FIELD_MAP = [
+  {id:'ef_name',       key:'薬品名'},
+  {id:'ef_generic',    key:'一般名'},
+  {id:'ef_spec',       key:'規格'},
+  {id:'ef_form',       key:'剤形'},
+  {id:'ef_maker',      key:'メーカー'},
+  {id:'ef_brand',      key:'先発/後発'},
+  {id:'ef_shelf',      key:'棚番号'},
+  {id:'ef_shelfdetail',key:'棚の詳細位置'},
+  {id:'ef_storage',    key:'保存区分'},
+  {id:'ef_adoption',   key:'採用区分'},
+  {id:'ef_supplier',   key:'発注先'},
+  {id:'ef_warning',    key:'類似薬注意'},
+  {id:'ef_alias',      key:'名称ゆれ'},
+  {id:'ef_search',     key:'検索用別名'},
+  {id:'ef_note',       key:'備考'},
+];
+
+/* ---- 状態 ---- */
+var allDrugs      = [];
+var filteredDrugs = [];
+var activeFilter  = 'all';
+var searchQuery   = '';
+var sortMode      = 'default';
+var editingIdx    = -1;
+var currentDrug   = null;
+var searchHistory = [];
+var favorites     = {};
+var pharmacies    = [];
+var activePharmId = null;
+var searchTimer   = null;
+var toastTimer    = null;
+var qrStream      = null;
+var qrTimer       = null;
+var recognition   = null;
+
+/* ---- DOM取得ユーティリティ ---- */
+function $(id){ return document.getElementById(id); }
+function on(id, ev, fn){
+  var el = $(id);
+  if(el) el.addEventListener(ev, fn);
+}
+
+/* ==============================================================
+   テーマ
+   ============================================================== */
+function applyTheme(t) {
+  document.documentElement.setAttribute('data-theme', t);
+  var btn = $('themeBtn');
+  if(btn) btn.textContent = t === 'dark' ? '🌙' : '☀️';
+  try { localStorage.setItem(LS_THEME, t); } catch(e){}
+}
+
+/* ==============================================================
+   トースト
+   ============================================================== */
+function showToast(msg, icon) {
+  var el = $('toast');
+  if(!el) return;
+  el.innerHTML = (icon || '✅') + ' ' + escH(msg);
+  el.classList.add('show');
+  if(toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ el.classList.remove('show'); }, 2500);
+}
+
+/* ==============================================================
+   エラーボックス
+   ============================================================== */
+function showError(title, body) {
+  var t = $('errorTitle'), b = $('errorBody'), box = $('errorBox');
+  if(!box) return;
+  if(t) t.textContent = title;
+  if(b) b.innerHTML = escH(body).replace(/\n/g,'<br>');
+  box.style.display = 'block';
+}
+function hideError() {
+  var box = $('errorBox');
+  if(box) box.style.display = 'none';
+}
+
+/* ==============================================================
+   ステータスバー
+   ============================================================== */
+function setStatus(state, msg) {
+  var dot  = $('statusDot');
+  var text = $('statusText');
+  if(dot)  dot.className = 'status-dot' + (state==='warn'?' warn':state==='err'?' err':'');
+  if(text && msg !== undefined) text.textContent = msg;
+}
+
+/* ==============================================================
+   HTML ユーティリティ
+   ============================================================== */
+function escH(s) {
+  return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function hlText(text, q) {
+  if(!q || !text) return escH(text||'');
+  var nq=norm(q), out='', i=0, t=text;
+  while(i < t.length) {
+    if(nq.length > 0 && norm(t.slice(i)).startsWith(nq)) {
+      out += '<em>' + escH(t.slice(i, i+nq.length)) + '</em>';
+      i += nq.length;
+    } else {
+      out += escH(t[i]);
+      i++;
+    }
+  }
+  return out;
+}
+
+/* ==============================================================
+   検索正規化
+   ============================================================== */
+function norm(s) {
+  if(!s) return '';
+  return s.toLowerCase()
+    .replace(/[Ａ-Ｚａ-ｚ０-９]/g, function(c){ return String.fromCharCode(c.charCodeAt(0)-0xFEE0); })
+    .replace(/[\u30A1-\u30F6]/g,   function(c){ return String.fromCharCode(c.charCodeAt(0)-0x60); })
+    .replace(/[\s\u3000\u30FB\u00B7・　]/g, '');
+}
+
+/* ==============================================================
+   お気に入り
+   ============================================================== */
+function loadFav() {
+  try { favorites = JSON.parse(localStorage.getItem(LS_FAV)||'{}'); } catch(e){ favorites={}; }
+}
+function saveFav() {
+  try { localStorage.setItem(LS_FAV, JSON.stringify(favorites)); } catch(e){}
+}
+function toggleFav(name) {
+  if(!name) return;
+  if(favorites[name]) { delete favorites[name]; showToast(name+' をお気に入りから削除','☆'); }
+  else                { favorites[name]=true;   showToast(name+' をお気に入り登録','⭐'); }
+  saveFav();
+  render();
+  updateModalFavBtn(name);
+}
+function toggleFavFromModal() {
+  if(currentDrug) toggleFav(currentDrug['薬品名']);
+}
+function updateModalFavBtn(name) {
+  var btn = $('modalFavBtn');
+  if(!btn) return;
+  var isFav = !!favorites[name];
+  btn.textContent = isFav ? '⭐' : '☆';
+  btn.style.color  = isFav ? '#f59e0b' : '';
+}
+
+/* ==============================================================
+   複数薬局
+   ============================================================== */
+function loadPharmacies() {
+  try { pharmacies = JSON.parse(localStorage.getItem(LS_PHARMACY)||'[]'); } catch(e){ pharmacies=[]; }
+}
+function savePharmacies() {
+  try { localStorage.setItem(LS_PHARMACY, JSON.stringify(pharmacies)); } catch(e){}
+}
+function renderPharmList() {
+  var list = $('pharmList');
+  if(!list) return;
+  if(!pharmacies.length) {
+    list.innerHTML = '<span style="font-size:.72rem;color:var(--muted)">薬局を追加すると切り替えられます</span>';
+    return;
+  }
+  list.innerHTML = pharmacies.map(function(p){
+    var active = p.id === activePharmId;
+    return '<span class="pharm-chip'+(active?' active':'')+'" data-id="'+escH(p.id)+'">'
+      + escH(p.name)+' <small style="opacity:.6">('+p.drugs.length+'件)</small>'
+      + (!active ? '<button class="pharm-chip-del" data-id="'+escH(p.id)+'">✕</button>' : '')
+      + '</span>';
+  }).join('');
+  list.querySelectorAll('.pharm-chip').forEach(function(chip){
+    chip.addEventListener('click', function(e){
+      if(e.target.classList.contains('pharm-chip-del')) return;
+      switchPharmacy(this.dataset.id);
+    });
+  });
+  list.querySelectorAll('.pharm-chip-del').forEach(function(btn){
+    btn.addEventListener('click', function(e){
+      e.stopPropagation();
+      deletePharmacy(this.dataset.id);
+    });
+  });
+}
+function addPharmacy() {
+  var input = $('pharmNameInput');
+  if(!input) return;
+  var name = (input.value||'').trim();
+  if(!name){ input.focus(); return; }
+  if(pharmacies.find(function(p){ return p.name===name; })){
+    showToast('同じ名前の薬局が既にあります','⚠️'); return;
+  }
+  var id   = 'pharm_'+Date.now();
+  var meta = null;
+  try { var m=localStorage.getItem(LS_META); meta=m?JSON.parse(m):{}; } catch(e){ meta={}; }
+  pharmacies.push({ id:id, name:name, drugs:allDrugs.slice(), meta:meta });
+  activePharmId = id;
+  savePharmacies();
+  input.value = '';
+  renderPharmList();
+  showToast('「'+name+'」として保存しました');
+}
+function switchPharmacy(id) {
+  var p = pharmacies.find(function(x){ return x.id===id; });
+  if(!p) return;
+  var curIdx = pharmacies.findIndex(function(x){ return x.id===activePharmId; });
+  if(curIdx >= 0) {
+    var meta = null;
+    try { var m=localStorage.getItem(LS_META); meta=m?JSON.parse(m):{}; } catch(e){ meta={}; }
+    pharmacies[curIdx].drugs = allDrugs.slice();
+    pharmacies[curIdx].meta  = meta;
+  }
+  activePharmId = id;
+  allDrugs = p.drugs.slice();
+  savePharmacies();
+  renderPharmList();
+  searchQuery = '';
+  var si = $('searchInput'); if(si) si.value='';
+  var cb = $('clearBtn'); if(cb) cb.classList.remove('show');
+  activeFilter = 'all';
+  document.querySelectorAll('.ftab').forEach(function(t){
+    t.classList.toggle('active', t.dataset.filter==='all');
+  });
+  var di = $('dbInfo');
+  if(di) di.innerHTML = '<strong>'+escH(p.name)+'</strong>&nbsp;'+allDrugs.length+'件';
+  render();
+  showToast('「'+p.name+'」に切り替えました');
+}
+function deletePharmacy(id) {
+  var p = pharmacies.find(function(x){ return x.id===id; });
+  if(!p || !window.confirm('「'+p.name+'」を削除しますか？')) return;
+  pharmacies = pharmacies.filter(function(x){ return x.id!==id; });
+  savePharmacies();
+  renderPharmList();
+  showToast('削除しました','🗑️');
+}
+
+/* ==============================================================
+   QRスキャン
+   ============================================================== */
+function openQR() {
+  var modal = $('qrModal');
+  if(!modal) return;
+  modal.classList.add('show');
+  document.body.style.overflow = 'hidden';
+  var resultEl = $('qrResult');
+  var manualEl = $('qrManual');
+  var videoEl  = $('qrVideo');
+  var lineEl   = document.querySelector('.qr-scan-line');
+  if(resultEl) { resultEl.textContent='カメラを起動中...'; resultEl.className='qr-result'; }
+  if(manualEl) manualEl.style.display='none';
+  if(videoEl)  videoEl.style.display='';
+  if(lineEl)   lineEl.style.display='';
+  if('BarcodeDetector' in window) {
+    startBarcodeDetector();
+  } else if(navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+    if(resultEl){ resultEl.textContent='QRスキャン非対応。棚番号を直接入力してください。'; resultEl.className='qr-result notfound'; }
+    if(manualEl) manualEl.style.display='flex';
+    if(videoEl)  videoEl.style.display='none';
+    if(lineEl)   lineEl.style.display='none';
+  } else {
+    if(resultEl){ resultEl.textContent='棚番号を直接入力してください。'; resultEl.className='qr-result notfound'; }
+    if(manualEl) manualEl.style.display='flex';
+    if(videoEl)  videoEl.style.display='none';
+    if(lineEl)   lineEl.style.display='none';
+  }
+}
+function startBarcodeDetector() {
+  var video    = $('qrVideo');
+  var resultEl = $('qrResult');
+  var manualEl = $('qrManual');
+  var detector = new BarcodeDetector({formats:['qr_code']});
+  navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}})
+    .then(function(stream){
+      qrStream = stream;
+      if(video){ video.srcObject=stream; video.play(); }
+      if(resultEl) resultEl.textContent='QRコードをカメラに向けてください';
+      qrTimer = setInterval(function(){
+        if(!video || video.readyState < 2) return;
+        detector.detect(video).then(function(codes){
+          if(!codes.length) return;
+          var text = (codes[0].rawValue||'').trim();
+          if(!text) return;
+          clearInterval(qrTimer); qrTimer=null;
+          if(resultEl){ resultEl.textContent='読み取り成功：「'+text+'」'; resultEl.className='qr-result found'; }
+          setTimeout(function(){
+            closeQR();
+            var si=$('searchInput'); if(si) si.value=text;
+            searchQuery=text;
+            var cb=$('clearBtn'); if(cb) cb.classList.add('show');
+            activeFilter='all';
+            document.querySelectorAll('.ftab').forEach(function(t){
+              t.classList.toggle('active',t.dataset.filter==='all');
+            });
+            render();
+            showToast('「'+text+'」で検索しました','📷');
+          }, 500);
+        }).catch(function(){});
+      }, 300);
+    })
+    .catch(function(){
+      if(resultEl){ resultEl.textContent='カメラにアクセスできません。棚番号を入力してください。'; resultEl.className='qr-result notfound'; }
+      if(manualEl) manualEl.style.display='flex';
+    });
+}
+function closeQR() {
+  clearInterval(qrTimer); qrTimer=null;
+  if(qrStream){ qrStream.getTracks().forEach(function(t){ t.stop(); }); qrStream=null; }
+  var modal=$('qrModal'), video=$('qrVideo');
+  if(modal) modal.classList.remove('show');
+  if(video) video.srcObject=null;
+  document.body.style.overflow='';
+}
+function qrManualSearch() {
+  var inp = $('qrManualInput');
+  var val = inp ? (inp.value||'').trim() : '';
+  if(!val) return;
+  closeQR();
+  var si=$('searchInput'); if(si) si.value=val;
+  searchQuery=val;
+  var cb=$('clearBtn'); if(cb) cb.classList.add('show');
+  activeFilter='all';
+  document.querySelectorAll('.ftab').forEach(function(t){
+    t.classList.toggle('active',t.dataset.filter==='all');
+  });
+  render();
+  showToast('「'+val+'」で検索','🔍');
+}
+
+/* ==============================================================
+   棚写真フルスクリーン
+   ============================================================== */
+function openPhotoFull(imgSrc) {
+  var img = $('photoFullImg'), el = $('photoFull');
+  if(img) img.src = imgSrc;
+  if(el)  el.classList.add('show');
+  document.body.style.overflow='hidden';
+}
+function closePhotoFull() {
+  var el = $('photoFull');
+  if(el) el.classList.remove('show');
+  document.body.style.overflow='';
+}
+
+/* ==============================================================
+   検索履歴
+   ============================================================== */
+function loadHistory() {
+  try { searchHistory = JSON.parse(localStorage.getItem(LS_HISTORY)||'[]'); } catch(e){ searchHistory=[]; }
+}
+function saveHistory(q) {
+  if(!q || q.length < 2) return;
+  searchHistory = [q].concat(searchHistory.filter(function(h){ return h!==q; })).slice(0,5);
+  try { localStorage.setItem(LS_HISTORY, JSON.stringify(searchHistory)); } catch(e){}
+  renderHistory();
+}
+function renderHistory() {
+  var bar   = $('historyBar');
+  var chips = $('historyChips');
+  if(!bar || !chips) return;
+  if(!searchHistory.length){ bar.style.display='none'; return; }
+  bar.style.display='block';
+  chips.innerHTML = searchHistory.map(function(h,i){
+    return '<span class="history-chip" data-q="'+escH(h)+'">'
+      +'🕐 '+escH(h)
+      +'<button class="history-chip-x" data-i="'+i+'" title="削除">✕</button>'
+      +'</span>';
+  }).join('');
+  chips.querySelectorAll('.history-chip').forEach(function(c){
+    c.addEventListener('click', function(e){
+      if(e.target.classList.contains('history-chip-x')) return;
+      var q=this.dataset.q;
+      var si=$('searchInput'); if(si) si.value=q;
+      searchQuery=q;
+      var cb=$('clearBtn'); if(cb) cb.classList.add('show');
+      bar.style.display='none';
+      render();
+    });
+  });
+  chips.querySelectorAll('.history-chip-x').forEach(function(btn){
+    btn.addEventListener('click', function(e){
+      e.stopPropagation();
+      searchHistory.splice(parseInt(this.dataset.i),1);
+      try { localStorage.setItem(LS_HISTORY, JSON.stringify(searchHistory)); } catch(ex){}
+      renderHistory();
+    });
+  });
+}
+
+/* ==============================================================
+   文字コード判定
+   ============================================================== */
+function detectEnc(buf) {
+  var b = new Uint8Array(buf);
+  if(b[0]===0xEF && b[1]===0xBB && b[2]===0xBF) return 'UTF-8';
+  var t   = new TextDecoder('UTF-8',{fatal:false}).decode(buf);
+  var bad = (t.match(/\uFFFD/g)||[]).length;
+  return bad / Math.max(t.length,1) > 0.03 ? 'Shift_JIS' : 'UTF-8';
+}
+
+/* ==============================================================
+   CSVパーサー
+   ============================================================== */
+function parseCSV(text) {
+  var cleaned = text.replace(/^\uFEFF/,'');
+  var lines   = cleaned.split(/\r?\n/);
+  if(lines.length < 2) throw new Error('データ行がありません。');
+  var headers = splitLine(lines[0]);
+  if(!headers.includes('薬品名'))
+    throw new Error('「薬品名」列が見つかりません。\n読み取った列：'+headers.slice(0,5).join('、'));
+  var result = [];
+  for(var i=1; i<lines.length; i++){
+    var line=lines[i].trim(); if(!line) continue;
+    var vals=splitLine(line), obj={};
+    headers.forEach(function(h,idx){ obj[h.trim()]=(vals[idx]||'').trim(); });
+    if(obj['薬品名']) result.push(obj);
+  }
+  if(!result.length) throw new Error('薬品名のある行が1件もありませんでした。');
+  return result;
+}
+function splitLine(line) {
+  var res=[],cur='',inQ=false;
+  for(var i=0; i<line.length; i++){
+    var c=line[i];
+    if(c==='"'){ if(inQ&&line[i+1]==='"'){cur+='"';i++;} else inQ=!inQ; }
+    else if(c===','&&!inQ){ res.push(cur); cur=''; }
+    else cur+=c;
+  }
+  return res.push(cur), res;
+}
+
+/* ==============================================================
+   CSVエクスポート
+   ============================================================== */
+function exportCSV() {
+  if(!allDrugs.length){ showToast('データがありません','❌'); return; }
+  var rows=[FIELDS.join(',')];
+  allDrugs.forEach(function(d){
+    var row=FIELDS.map(function(f){
+      var v=(d[f]||'').replace(/"/g,'""');
+      return (v.includes(',')||v.includes('"')||v.includes('\n')) ? '"'+v+'"' : v;
+    });
+    rows.push(row.join(','));
+  });
+  var blob=new Blob(['\uFEFF'+rows.join('\n')],{type:'text/csv;charset=utf-8'});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');
+  a.href=url; a.download='yakkyoku_'+new Date().toISOString().slice(0,10)+'.csv';
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a); URL.revokeObjectURL(url);
+  showToast('CSVを書き出しました（'+allDrugs.length+'件）');
+}
+
+/* ==============================================================
+   localStorage
+   ============================================================== */
+function saveLS(name) {
+  try{
+    var j=JSON.stringify(allDrugs);
+    if(j.length>4.5*1024*1024){ showToast('データが大きすぎます','⚠️'); return; }
+    localStorage.setItem(LS_DATA,j);
+    localStorage.setItem(LS_META,JSON.stringify({
+      fileName:name||'データ', count:allDrugs.length, savedAt:new Date().toISOString()
+    }));
+  }catch(e){}
+}
+function loadLS() {
+  try{
+    var j=localStorage.getItem(LS_DATA), m=localStorage.getItem(LS_META);
+    if(!j) return null;
+    var drugs=JSON.parse(j);
+    if(!Array.isArray(drugs)||!drugs.length) return null;
+    return {drugs:drugs, meta:m?JSON.parse(m):{}};
+  }catch(e){ return null; }
+}
+function clearLS() {
+  try{ localStorage.removeItem(LS_DATA); localStorage.removeItem(LS_META); }catch(e){}
+}
+
+/* ==============================================================
+   ファイル読込
+   ============================================================== */
+function triggerFile() {
+  var inp=$('csvFileInput'); if(inp){inp.value='';inp.click();}
+}
+
+/* ==============================================================
+   UI更新
+   ============================================================== */
+function refreshUI(fileName) {
+  try{
+    var meta=null;
+    try{ var m=localStorage.getItem(LS_META); meta=m?JSON.parse(m):null; }catch(e){}
+    var when=(meta&&meta.savedAt)
+      ? new Date(meta.savedAt).toLocaleString('ja-JP',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})
+      : '';
+    var di=$('dbInfo');
+    if(di) di.innerHTML='<strong>'+escH(fileName||'データ')+'</strong>&nbsp;'+allDrugs.length+'件'
+      +(when?'&nbsp;<span class="db-time">'+when+'保存</span>':'');
+
+    var banner=$('csvBanner'), bar=$('dataBar');
+    if(banner) banner.style.display='none';
+    if(bar)    bar.classList.add('show');
+
+    hideError();
+    searchQuery='';
+    var si=$('searchInput'); if(si) si.value='';
+    var cb=$('clearBtn');    if(cb) cb.classList.remove('show');
+    activeFilter='all';
+    document.querySelectorAll('.ftab').forEach(function(t){
+      t.classList.toggle('active',t.dataset.filter==='all');
+    });
+    render();
+  }catch(e){ setStatus('err','表示エラー: '+e.message); }
+}
+function confirmClear() {
+  if(!window.confirm('全データを削除してよいですか？\nこの操作は元に戻せません。')) return;
+  clearLS(); allDrugs=[];
+  var bar=$('dataBar'), banner=$('csvBanner'), list=$('resultList'), fc=$('footerCount');
+  if(bar)    bar.classList.remove('show');
+  if(banner) banner.style.display='block';
+  if(list)   list.innerHTML='';
+  if(fc)     fc.textContent='— 件';
+  setStatus('warn','データを読み込むか、薬品を追加してください');
+  showToast('データをクリアしました','🗑️');
+}
+
+/* ==============================================================
+   ソート
+   ============================================================== */
+var sortModes =['default','shelf','name'];
+var sortLabels=['標準','棚番号順','名称順'];
+function applySort(drugs){
+  if(sortMode==='shelf') return drugs.slice().sort(function(a,b){ return (a['棚番号']||'').localeCompare(b['棚番号']||'','ja'); });
+  if(sortMode==='name')  return drugs.slice().sort(function(a,b){ return (a['薬品名']||'').localeCompare(b['薬品名']||'','ja'); });
+  return drugs;
+}
+
+/* ==============================================================
+   検索
+   ============================================================== */
+function calcScore(drug, q) {
+  if(!q) return 1;
+  var flds=[{k:'薬品名',w:10},{k:'検索用別名',w:9},{k:'名称ゆれ',w:8},
+            {k:'一般名',w:7},{k:'棚番号',w:6},{k:'メーカー',w:4},
+            {k:'規格',w:3},{k:'剤形',w:3},{k:'棚の詳細位置',w:2},{k:'備考',w:1}];
+  var best=0;
+  for(var i=0;i<flds.length;i++){
+    var v=norm(drug[flds[i].k]||''); if(!v) continue;
+    var s=v===q?flds[i].w*10:v.startsWith(q)?flds[i].w*5:v.includes(q)?flds[i].w*2:0;
+    if(s>best) best=s;
+  }
+  return best;
+}
+function applyFilter(drugs, key) {
+  if(!key||key==='all') return drugs;
+  if(FILTER_KW[key]==='__warn__') return drugs.filter(function(d){ return !!d['類似薬注意']; });
+  if(FILTER_KW[key]==='__fav__')  return drugs.filter(function(d){ return !!(favorites&&favorites[d['薬品名']]); });
+  var kws=FILTER_KW[key]; if(!kws) return drugs;
+  return drugs.filter(function(d){
+    var f=norm(d['剤形']||'');
+    for(var i=0;i<kws.length;i++) if(f.includes(norm(kws[i]))) return true;
+    return false;
+  });
+}
+function doSearch() {
+  var base=applyFilter(allDrugs,activeFilter);
+  var q=norm(searchQuery);
+  if(!q) return applySort(base).slice(0,80);
+  var sc=[];
+  for(var i=0;i<base.length;i++){
+    var s=calcScore(base[i],q);
+    if(s>0) sc.push({d:base[i],s:s});
+  }
+  sc.sort(function(a,b){ return b.s-a.s; });
+  return sc.slice(0,50).map(function(x){ return x.d; });
+}
+
+/* ==============================================================
+   レンダリング
+   ============================================================== */
+function render() {
+  try{
+    filteredDrugs=doSearch();
+    var list=$('resultList'), stText=$('statusText'), badge=$('countBadge'), fc=$('footerCount');
+    var q=searchQuery;
+    if(fc) fc.textContent=filteredDrugs.length+' 件';
+    if(badge){ if(q&&filteredDrugs.length){ badge.textContent=filteredDrugs.length+' 件'; badge.classList.add('show'); } else { badge.classList.remove('show'); } }
+    if(!list) return;
+    if(!allDrugs.length){
+      list.innerHTML='';
+      setStatus('warn','薬品を追加するか、CSVを読み込んでください');
+      return;
+    }
+    if(!filteredDrugs.length){
+      list.innerHTML='<div class="empty-state"><div class="empty-icon">🔎</div><div class="empty-title">見つかりませんでした</div><div class="empty-sub">別のキーワードで検索するか、「＋ 薬品を追加」で登録してください。</div></div>';
+      if(stText) stText.textContent='「'+q+'」に一致しません';
+      return;
+    }
+    var html='';
+    for(var i=0;i<filteredDrugs.length;i++) html+=buildCard(filteredDrugs[i],i,q);
+    list.innerHTML=html;
+    list.querySelectorAll('.drug-card').forEach(function(card){
+      var idx=parseInt(card.dataset.idx,10);
+      card.addEventListener('click',function(e){
+        if(e.target.classList.contains('card-edit-btn')||e.target.classList.contains('fav-btn')) return;
+        openModal(filteredDrugs[idx]);
+      });
+      card.addEventListener('keydown',function(e){ if(e.key==='Enter'||e.key===' ') openModal(filteredDrugs[idx]); });
+      var eb=card.querySelector('.card-edit-btn');
+      if(eb) eb.addEventListener('click',function(e){ e.stopPropagation(); openEdit(allDrugs.indexOf(filteredDrugs[idx])); });
+      var fb=card.querySelector('.fav-btn');
+      if(fb) fb.addEventListener('click',function(e){ e.stopPropagation(); toggleFav(fb.dataset.name); });
+    });
+    if(stText) stText.textContent=q?'「'+q+'」で'+filteredDrugs.length+'件':'全'+allDrugs.length+'件 / 表示'+filteredDrugs.length+'件';
+    setStatus('ok');
+  }catch(e){ setStatus('err','描画エラー'); console.error('render error:',e); }
+}
+function buildCard(d,idx,q){
+  var hw   =!!(d['類似薬注意']);
+  var isGG =d['先発/後発']==='後発'||d['先発/後発']==='GE';
+  var isBr =d['先発/後発']==='先発';
+  var isFav=!!(favorites&&favorites[d['薬品名']]);
+  var chips='';
+  if(d['メーカー'])  chips+='<span class="chip maker">🏭 '+hlText(d['メーカー'],q)+'</span>';
+  if(d['規格'])      chips+='<span class="chip spec">'+escH(d['規格'])+'</span>';
+  if(d['剤形'])      chips+='<span class="chip form">'+escH(d['剤形'])+'</span>';
+  if(isGG)           chips+='<span class="chip gg">後発</span>';
+  if(isBr)           chips+='<span class="chip brand">先発</span>';
+  return '<div class="drug-card'+(hw?' has-warning':'')+(isFav?' is-fav':'')+'" data-idx="'+idx+'" role="button" tabindex="0" aria-label="'+escH(d['薬品名'])+'">'
+    +'<button class="card-edit-btn" aria-label="編集">✏️ 編集</button>'
+    +'<div class="card-top">'
+      +'<div class="drug-name">'+hlText(d['薬品名'],q)+'</div>'
+      +'<div class="card-right">'
+        +(d['棚番号']?'<div class="shelf-badge">'+escH(d['棚番号'])+'</div>':'')
+        +'<button class="fav-btn'+(isFav?' starred':'')+'" aria-label="お気に入り" data-name="'+escH(d['薬品名'])+'">'+(isFav?'⭐':'☆')+'</button>'
+      +'</div>'
+    +'</div>'
+    +(d['一般名']?'<div class="generic-name">'+hlText(d['一般名'],q)+'</div>':'')
+    +'<div class="card-meta">'+chips+'</div>'
+    +(hw?'<div class="warn-row">⚠️ '+escH(d['類似薬注意'])+'</div>':'')
+    +'</div>';
+}
+
+/* ==============================================================
+   詳細モーダル
+   ============================================================== */
+function openModal(drug){
+  try{
+    currentDrug=drug;
+    var hw=!!(drug['類似薬注意']);
+    var tn=$('modalTitle'); if(tn) tn.textContent=drug['薬品名']||'—';
+
+    /* 棚写真HTML（onerrorをJS側で処理してインライン属性の問題を回避） */
+    var photoHTML='';
+    if(drug['棚写真URL']){
+      photoHTML='<img class="shelf-photo" src="'+escH(drug['棚写真URL'])+'" alt="棚写真" id="modalPhoto">';
+    }
+
+    var body=$('modalBody');
+    if(!body) return;
+    body.innerHTML=
+      photoHTML
+      +(drug['棚番号']
+        ?'<div class="shelf-hero"><div class="shelf-hero-icon">📦</div><div>'
+          +'<div class="shelf-hero-label">棚番号</div>'
+          +'<div class="shelf-hero-num">'+escH(drug['棚番号'])+'</div>'
+          +(drug['棚の詳細位置']?'<div class="shelf-hero-sub">'+escH(drug['棚の詳細位置'])+'</div>':'')
+         +'</div></div>':'')
+      +(hw?'<div class="warn-block"><div class="warn-block-ico">⚠️</div>'
+        +'<div class="warn-block-body"><div class="warn-block-title">類似薬・名称注意</div>'
+        +escH(drug['類似薬注意'])+'</div></div>':'')
+      +'<div class="detail-sec"><div class="detail-sec-title">基本情報</div><div class="detail-grid">'
+        +di('薬品名',drug['薬品名'],true)+di('一般名',drug['一般名'],true)
+        +di('規格',drug['規格'],false)+di('剤形',drug['剤形'],false)
+        +di('採用メーカー',drug['メーカー'],true)+di('先発/後発',drug['先発/後発'],false)
+        +di('採用区分',drug['採用区分'],false)
+      +'</div></div>'
+      +((drug['保存区分']||drug['発注先'])
+        ?'<div class="detail-sec"><div class="detail-sec-title">管理情報</div><div class="detail-grid">'
+          +(drug['保存区分']?'<div class="ditem full"><div class="dlabel">保存区分</div>'
+            +'<div class="dvalue">'+escH(drug['保存区分'])+buildStags(drug['保存区分'])+'</div></div>':'')
+          +di('発注先',drug['発注先'],true)
+        +'</div></div>':'')
+      +(drug['備考']?'<div class="detail-sec"><div class="detail-sec-title">備考</div>'
+        +'<div class="ditem"><div class="dvalue" style="font-size:.84rem;line-height:1.75">'+escH(drug['備考'])+'</div></div></div>':'');
+
+    /* 棚写真のイベントをJSで設定（インライン属性を避ける） */
+    var photoEl=$('modalPhoto');
+    if(photoEl){
+      photoEl.addEventListener('click',function(){ openPhotoFull(drug['棚写真URL']); });
+      photoEl.addEventListener('error',function(){ this.style.display='none'; });
+    }
+
+    updateModalFavBtn(drug['薬品名']);
+    var modal=$('modal'), sheet=$('modalSheet');
+    if(modal) modal.classList.add('show');
+    if(sheet) sheet.scrollTop=0;
+    document.body.style.overflow='hidden';
+  }catch(e){ console.error('openModal error:',e); }
+}
+function di(label,val,full){
+  if(!val) return '';
+  return '<div class="ditem'+(full?' full':'')+'"><div class="dlabel">'+escH(label)+'</div><div class="dvalue">'+escH(val)+'</div></div>';
+}
+function buildStags(s){
+  if(!s) return '';
+  var tags=[];
+  if(s.includes('冷所'))   tags.push('<span class="stag cold">❄️ 冷所保存</span>');
+  if(s.includes('遮光'))   tags.push('<span class="stag dark">🌙 遮光</span>');
+  if(s.includes('麻薬'))   tags.push('<span class="stag narco">🔒 麻薬</span>');
+  if(s.includes('向精神')) tags.push('<span class="stag narco">🔒 向精神薬</span>');
+  if(!tags.length&&s)      tags.push('<span class="stag other">'+escH(s)+'</span>');
+  return tags.length?'<div class="stags">'+tags.join('')+'</div>':'';
+}
+function closeModal(){
+  var modal=$('modal'); if(modal) modal.classList.remove('show');
+  document.body.style.overflow='';
+  currentDrug=null;
+}
+
+/* ==============================================================
+   編集モーダル
+   ============================================================== */
+function openEdit(drugIdx){
+  editingIdx=(drugIdx===null||drugIdx===undefined)?-1:drugIdx;
+  var isNew=editingIdx===-1;
+  var drug=isNew?{}:(allDrugs[editingIdx]||{});
+  var et=$('editTitle'); if(et) et.textContent=isNew?'薬品を追加':'薬品を編集';
+  var dz=$('deleteZone'); if(dz) dz.style.display=isNew?'none':'block';
+  FIELD_MAP.forEach(function(f){
+    var el=$(f.id); if(el) el.value=drug[f.key]||'';
+  });
+  var em=$('editModal'), es=$('editSheet');
+  if(em) em.classList.add('show');
+  if(es) es.scrollTop=0;
+  document.body.style.overflow='hidden';
+  if(isNew) setTimeout(function(){ var n=$('ef_name'); if(n) n.focus(); },300);
+}
+function closeEdit(){
+  var em=$('editModal'); if(em) em.classList.remove('show');
+  document.body.style.overflow='';
+}
+function saveEdit(){
+  var nameEl=$('ef_name');
+  var name=(nameEl?nameEl.value:'').trim();
+  if(!name){ alert('薬品名は必須です。'); if(nameEl) nameEl.focus(); return; }
+  var obj={};
+  FIELD_MAP.forEach(function(f){
+    var el=$(f.id); obj[f.key]=el?(el.value||'').trim():'';
+  });
+  var isNew=editingIdx===-1;
+  if(isNew){ allDrugs.unshift(obj); } else { allDrugs[editingIdx]=obj; }
+  saveLS('手動データ');
+  closeEdit();
+  hideError();
+  refreshUI('手動データ');
+  showToast((isNew?'追加：':'更新：')+name);
+}
+function deleteDrug(){
+  if(editingIdx<0||editingIdx>=allDrugs.length) return;
+  var name=allDrugs[editingIdx]['薬品名']||'(不明)';
+  if(!window.confirm('「'+name+'」を削除しますか？\nこの操作は元に戻せません。')) return;
+  allDrugs.splice(editingIdx,1);
+  saveLS('手動データ');
+  closeEdit();
+  hideError();
+  refreshUI('手動データ');
+  showToast('削除：'+name,'🗑️');
+}
+
+/* ==============================================================
+   音声入力
+   ============================================================== */
+function initVoice(){
+  var btn=$('voiceBtn');
+  if(!btn) return;
+  btn.addEventListener('click',function(){
+    var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+    if(!SR){ showToast('このブラウザは音声入力に対応していません','❌'); return; }
+    if(recognition){ recognition.stop(); recognition=null; btn.textContent='🎤'; return; }
+    recognition=new SR();
+    recognition.lang='ja-JP'; recognition.interimResults=false;
+    btn.textContent='🔴';
+    recognition.onresult=function(e){
+      var t=e.results[0][0].transcript;
+      var si=$('searchInput'); if(si) si.value=t;
+      searchQuery=t;
+      var cb=$('clearBtn'); if(cb) cb.classList.add('show');
+      render();
+      btn.textContent='🎤'; recognition=null;
+    };
+    recognition.onerror=recognition.onend=function(){ btn.textContent='🎤'; recognition=null; };
+    recognition.start();
+  });
+}
+
+/* ==============================================================
+   起動（すべてのDOM操作を安全に実行）
+   ============================================================== */
+(function init(){
+  /* --- 各種データ復元 --- */
+  try{ loadFav(); }catch(e){}
+  try{ loadHistory(); }catch(e){}
+  try{ loadPharmacies(); }catch(e){}
+  try{ renderHistory(); }catch(e){}
+
+  /* --- テーマ復元 --- */
+  (function(){
+    var t='light';
+    try{
+      var saved=localStorage.getItem(LS_THEME)||localStorage.getItem('yakkyoku_theme')||'';
+      if(saved==='dark'||saved==='light') t=saved;
+      localStorage.setItem(LS_THEME,t);
+    }catch(e){}
+    applyTheme(t);
+  })();
+
+  /* --- イベント登録（全部 on() でnull安全） --- */
+  on('themeBtn','click',function(){
+    applyTheme(document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark');
+  });
+  on('csvIconBtn','click',triggerFile);
+  on('sortBtn','click',function(){
+    var idx=sortModes.indexOf(sortMode);
+    sortMode=sortModes[(idx+1)%3];
+    var sl=$('sortLabel'); if(sl) sl.textContent=sortLabels[sortModes.indexOf(sortMode)];
+    render();
+  });
+  on('modalEditBtn','click',function(){ if(!currentDrug) return; var idx=allDrugs.indexOf(currentDrug); closeModal(); openEdit(idx); });
+  on('modalFavBtn','click',toggleFavFromModal);
+  on('modalClose','click',closeModal);
+  on('modal','click',function(e){ if(e.target===this) closeModal(); });
+  on('editModal','click',function(e){ if(e.target===this) closeEdit(); });
+  on('scrollTop','click',function(){ window.scrollTo({top:0,behavior:'smooth'}); });
+  on('qrBtn','click',openQR);
+  on('qrModal','click',function(e){ if(e.target===this) closeQR(); });
+  on('pharmBtn','click',function(){
+    var bar=$('pharmacyBar');
+    if(bar){ bar.classList.toggle('show'); renderPharmList(); }
+  });
+  on('pharmNameInput','keydown',function(e){ if(e.key==='Enter') addPharmacy(); });
+  on('qrManualInput','keydown',function(e){ if(e.key==='Enter') qrManualSearch(); });
+
+  /* searchInput */
+  var si=$('searchInput');
+  if(si) si.addEventListener('input',function(){
+    searchQuery=this.value;
+    var cb=$('clearBtn'); if(cb) cb.classList.toggle('show',searchQuery.length>0);
+    var hb=$('historyBar');
+    if(hb) hb.style.display=searchQuery?'none':(searchHistory.length?'block':'none');
+    clearTimeout(searchTimer);
+    searchTimer=setTimeout(function(){ render(); if(searchQuery.length>=2) saveHistory(searchQuery); },120);
+  });
+
+  /* clearBtn */
+  var cb=$('clearBtn');
+  if(cb) cb.addEventListener('click',function(){
+    var si2=$('searchInput'); if(si2) si2.value='';
+    searchQuery=''; this.classList.remove('show');
+    var si3=$('searchInput'); if(si3) si3.focus();
+    renderHistory(); render();
+  });
+
+  /* filterTabs */
+  var ft=$('filterTabs');
+  if(ft) ft.addEventListener('click',function(e){
+    var tab=e.target.closest('.ftab'); if(!tab) return;
+    document.querySelectorAll('.ftab').forEach(function(t){ t.classList.remove('active'); });
+    tab.classList.add('active'); activeFilter=tab.dataset.filter; render();
+  });
+
+  /* csvFileInput */
+  var fi=$('csvFileInput');
+  if(fi) fi.addEventListener('change',function(){
+    var file=this.files[0]; if(!file) return;
+    if(file.size>10*1024*1024){ showToast('ファイルが大きすぎます','❌'); return; }
+    setStatus('warn','読み込み中...');
+    var reader=new FileReader();
+    reader.readAsArrayBuffer(file);
+    reader.onload=function(e){
+      var buf=e.target.result, enc=detectEnc(buf), text;
+      try{ text=new TextDecoder(enc,{fatal:false}).decode(buf); }catch(ex){ text=new TextDecoder('UTF-8',{fatal:false}).decode(buf); }
+      var drugs;
+      try{ drugs=parseCSV(text); }catch(ex){ showError('CSV読込エラー',ex.message); setStatus('err','エラー'); return; }
+      hideError(); allDrugs=drugs; saveLS(file.name); refreshUI(file.name);
+      showToast(file.name+' を読み込みました（'+drugs.length+'件）');
+    };
+    reader.onerror=function(){ showError('読込失敗','ファイルにアクセスできませんでした。'); setStatus('err','エラー'); };
+  });
+
+  /* スクロールトップ */
+  window.addEventListener('scroll',function(){ var st=$('scrollTop'); if(st) st.classList.toggle('show',window.scrollY>300); },{passive:true});
+
+  /* キーボードショートカット */
+  document.addEventListener('keydown',function(e){
+    if(e.key==='/'&&!['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName)){
+      e.preventDefault(); var si2=$('searchInput'); if(si2){si2.focus();si2.select();}
+    }
+    if(e.key==='Escape'){
+      var em=$('editModal'), modal=$('modal');
+      if(em&&em.classList.contains('show')) closeEdit();
+      else if(modal&&modal.classList.contains('show')) closeModal();
+      else if(searchQuery){ var cb2=$('clearBtn'); if(cb2) cb2.click(); }
+    }
+  });
+
+  /* 音声入力 */
+  initVoice();
+
+  /* --- データ復元 or バナー表示 --- */
+  var saved=null;
+  try{ saved=loadLS(); }catch(e){}
+
+  if(saved && saved.drugs && saved.drugs.length){
+    allDrugs=saved.drugs;
+    var meta=saved.meta||{}, when='';
+    try{ if(meta.savedAt) when=new Date(meta.savedAt).toLocaleString('ja-JP',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}); }catch(e){}
+    refreshUI(meta.fileName||'データ');
+    setStatus('ok',(meta.fileName||'データ')+'('+allDrugs.length+'件)を復元'+(when?' '+when:''));
+  } else {
+    var banner=$('csvBanner'), list=$('resultList');
+    if(banner) banner.style.display='block';
+    if(list)   list.innerHTML='';
+    setStatus('warn','CSVを読み込むか、薬品を追加してください');
+  }
+})();
+
+</script>
+
+</body>
+</html>
